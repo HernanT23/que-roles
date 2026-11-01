@@ -230,7 +230,7 @@ create table public.stock_movements (
   note text,
   created_by uuid references auth.users(id),
   created_at timestamptz not null default now(),
-  check ((ingredient_id is not null)::int + (product_id is not null)::int = 1),
+  check (num_nonnulls(ingredient_id, product_id) = 1),
   foreign key (organization_id,ingredient_id) references public.ingredients(organization_id,id) on delete restrict,
   foreign key (organization_id,product_id) references public.products(organization_id,id) on delete restrict
 );
@@ -245,13 +245,14 @@ create table public.cash_sessions (
   currency public.money_currency not null default 'USD',
   status text not null default 'open' check (status in ('open','closed')),
   opened_at timestamptz not null default now(),
-  closed_at timestamptz
+  closed_at timestamptz,
+  unique (organization_id,id)
 );
 
 create table public.cash_movements (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references public.organizations(id) on delete cascade,
-  cash_session_id uuid not null references public.cash_sessions(id) on delete restrict,
+  cash_session_id uuid not null,
   direction text not null check (direction in ('in','out')),
   concept text not null,
   amount numeric(14,2) not null check (amount > 0),
@@ -259,7 +260,8 @@ create table public.cash_movements (
   source_type text,
   source_id uuid,
   created_by uuid references auth.users(id),
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  foreign key (organization_id,cash_session_id) references public.cash_sessions(organization_id,id) on delete restrict
 );
 
 create table public.audit_logs (
@@ -359,6 +361,42 @@ alter table public.billing_events enable row level security;
 create policy "active plans visible" on public.subscription_plans for select to authenticated using (active = true);
 create policy "members read subscription" on public.organization_subscriptions for select to authenticated using (public.is_org_member(organization_id));
 -- No authenticated insert/update/delete policy for billing records.
+
+
+-- Secure self-service tenant bootstrap. Client cannot directly insert an organization or assign itself an owner role.
+create or replace function public.create_organization(p_name text, p_slug text)
+returns uuid
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $
+declare new_org_id uuid;
+begin
+  if auth.uid() is null then
+    raise exception 'Authentication required';
+  end if;
+  if length(trim(coalesce(p_name,''))) < 2 or length(trim(p_name)) > 120 then
+    raise exception 'Invalid organization name';
+  end if;
+  if p_slug !~ '^[a-z0-9][a-z0-9-]{1,62} pricing can be adjusted before commercial launch.
+insert into public.subscription_plans(code,name,monthly_price_usd,max_members,max_products)
+values ('starter','Inicial',9.00,3,200)
+on conflict (code) do nothing;
+ then
+    raise exception 'Invalid organization slug';
+  end if;
+  insert into public.organizations(name,slug)
+  values (trim(p_name),p_slug)
+  returning id into new_org_id;
+  insert into public.organization_memberships(organization_id,user_id,role)
+  values (new_org_id,auth.uid(),'owner');
+  insert into public.organization_subscriptions(organization_id,status,trial_ends_at)
+  values (new_org_id,'trialing',now() + interval '14 days');
+  return new_org_id;
+end;
+$;
+revoke all on function public.create_organization(text,text) from public;
+grant execute on function public.create_organization(text,text) to authenticated;
 
 -- Seed a starter plan; pricing can be adjusted before commercial launch.
 insert into public.subscription_plans(code,name,monthly_price_usd,max_members,max_products)
