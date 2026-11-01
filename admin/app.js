@@ -118,7 +118,7 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 } else {
   supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
   supabase.auth.getSession().then(({ data, error }) => error ? message(error.message) : handleSession(data.session));
-  supabase.auth.onAuthStateChange((_event, session) => { if (session) setTimeout(() => handleSession(session), 0); });
+  supabase.auth.onAuthStateChange((event, session) => { if (event === "SIGNED_OUT") setTimeout(() => handleSession(null), 0); });
 }
 authSwitch.addEventListener("click", () => setMode(authMode === "login" ? "signup" : "login"));
 authForm.addEventListener("submit", async event => {
@@ -133,11 +133,12 @@ authForm.addEventListener("submit", async event => {
       const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName } } });
       if (error) throw error;
       if (data.session) {
-        await supabase.from("profiles").upsert({ user_id: data.user.id, full_name: fullName });
+        const profileResult = await supabase.from("profiles").upsert({ user_id: data.user.id, full_name: fullName });
+        if (profileResult.error) throw profileResult.error;
         await handleSession(data.session);
       } else {
-        message("Cuenta creada. Revisa tu correo y confirma la dirección antes de iniciar sesión.", true);
         setMode("login");
+        message("Cuenta creada. Revisa tu correo y confirma la dirección antes de iniciar sesión.", true);
       }
     } else {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -156,7 +157,9 @@ orgForm.addEventListener("submit", async event => {
   button.disabled = true; message("Creando tu negocio...");
   try {
     if (slug.length < 2) throw new Error("El nombre debe contener al menos dos letras o números.");
-    const { data, error } = await supabase.rpc("create_organization", { p_name: name, p_slug: slug });
+    const { data: sessionDataBefore } = await supabase.auth.getSession();
+    const uniqueSlug = (slug.slice(0, 55) + "-" + sessionDataBefore.session.user.id.slice(0, 6)).slice(0, 63);
+    const { data, error } = await supabase.rpc("create_organization", { p_name: name, p_slug: uniqueSlug });
     if (error) throw error;
     const { data: sessionData } = await supabase.auth.getSession();
     await handleSession(sessionData.session);
