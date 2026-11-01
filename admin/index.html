@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="/admin/app.css">
 </head>
 <body>
-<section id="authScreen" class="auth-screen"><div class="auth-card"><a class="brand auth-brand" href="/admin/"><span class="brand-mark">QR</span><span>Que Roles<small>GESTIÓN</small></span></a><p class="eyebrow">GESTIONA TU NEGOCIO</p><h1 id="authTitle">Bienvenido</h1><p id="authDescription" class="auth-description">Inicia sesión para entrar a tu espacio de trabajo.</p><form id="authForm"><label id="nameField" class="auth-field hidden">Nombre completo<input id="fullName" type="text" autocomplete="name" placeholder="Tu nombre"></label><label class="auth-field">Correo electrónico<input id="email" type="email" autocomplete="email" required placeholder="tu@correo.com"></label><label class="auth-field">Contraseña<input id="password" type="password" autocomplete="current-password" minlength="8" required placeholder="Mínimo 8 caracteres"></label><button class="primary auth-submit" id="authSubmit" type="submit">Iniciar sesión</button></form><div id="authMessage" class="auth-message" role="status"></div><button class="auth-switch" id="authSwitch" type="button">¿No tienes cuenta? Crear cuenta</button><form id="orgForm" class="hidden"><h2>Vamos a crear tu negocio</h2><p class="auth-description">Este será tu espacio privado para gestionar ventas, clientes e inventario.</p><label class="auth-field">Nombre del negocio<input id="orgName" required minlength="2" maxlength="120" placeholder="Ej. Roles de Canela"></label><button class="primary auth-submit" type="submit">Crear mi negocio</button></form><button id="signOutAuth" class="auth-switch hidden" type="button">Cerrar sesión</button></div></section>
+<section id="authScreen" class="auth-screen"><div class="auth-card"><a class="brand auth-brand" href="/admin/"><span class="brand-mark">QR</span><span>Que Roles<small>GESTIÓN</small></span></a><p class="eyebrow">TU NEGOCIO, BAJO CONTROL</p><h1 id="authTitle">Preparando Que Roles</h1><p id="authDescription" class="auth-description">Estamos abriendo tu espacio de trabajo…</p><div id="authMessage" class="auth-message" role="status" aria-live="polite"></div></div></section>
 <div class="app-shell hidden">
   <aside class="sidebar">
     <a class="brand" href="/admin/"><span class="brand-mark">QR</span><span>Que Roles<small>GESTIÓN</small></span></a>
@@ -24,7 +24,7 @@
       <a class="nav-item" href="#caja" data-page="caja"><span>＄</span> Caja y gastos</a>
       <a class="nav-item" href="#reportes" data-page="reportes"><span>▤</span> Reportes</a>
     </nav>
-    <div class="sidebar-bottom"><span class="avatar">QR</span><span><strong id="userLabel">Mi cuenta</strong><small id="userEmail">Sesión activa</small></span><button id="signOut" class="signout-btn" type="button" title="Cerrar sesión">↪</button></div>
+    <div class="sidebar-bottom"><span class="avatar">QR</span><span><strong id="userLabel">Mi cuenta</strong><small id="userEmail">Sesión activa</small></span></div>
   </aside>
   <main class="main">
     <header class="topbar"><button class="menu" id="menuBtn" aria-label="Abrir menú">☰</button><div><span class="muted">PANEL DE CONTROL</span><h1 id="pageTitle">Resumen del negocio</h1></div><button class="user-chip" type="button">QR <span>Que Roles</span></button></header>
