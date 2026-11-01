@@ -77,7 +77,7 @@ async function loadDashboard() {
   } else {
     for (const sale of recent.data) {
       const tr = document.createElement("tr");
-      const cells = ["#" + sale.sale_number, new Date(sale.created_at).toLocaleDateString("es-VE"), (sale.currency === "VES" ? "Bs. " : "$") + Number(sale.total).toFixed(2), sale.status === "confirmed" ? "Confirmada" : sale.status];
+      const cells = ["#" + sale.sale_number, new Date(sale.created_at).toLocaleDateString("es-VE", { timeZone: currentOrg.timezone || "America/Caracas" }), (sale.currency === "VES" ? "Bs. " : "$") + Number(sale.total).toFixed(2), sale.status === "confirmed" ? "Confirmada" : sale.status];
       cells.forEach(value => { const td = document.createElement("td"); td.textContent = value; tr.append(td); });
       tbody.append(tr);
     }
