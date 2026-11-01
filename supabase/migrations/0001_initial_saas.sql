@@ -373,7 +373,7 @@ returns uuid
 language plpgsql
 security definer
 set search_path = public, pg_temp
-as $
+as $$
 declare new_org_id uuid;
 begin
   if auth.uid() is null then
@@ -382,11 +382,7 @@ begin
   if length(trim(coalesce(p_name,''))) < 2 or length(trim(p_name)) > 120 then
     raise exception 'Invalid organization name';
   end if;
-  if p_slug !~ '^[a-z0-9][a-z0-9-]{1,62} pricing can be adjusted before commercial launch.
-insert into public.subscription_plans(code,name,monthly_price_usd,max_members,max_products)
-values ('starter','Inicial',9.00,3,200)
-on conflict (code) do nothing;
- then
+  if p_slug !~ '^[a-z0-9][a-z0-9-]{1,62}$' then
     raise exception 'Invalid organization slug';
   end if;
   insert into public.organizations(name,slug)
@@ -398,7 +394,7 @@ on conflict (code) do nothing;
   values (new_org_id,'trialing',now() + interval '14 days');
   return new_org_id;
 end;
-$;
+$$;
 revoke all on function public.create_organization(text,text) from public;
 grant execute on function public.create_organization(text,text) to authenticated;
 
