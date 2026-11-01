@@ -418,4 +418,4 @@ to authenticated;
 -- Server-side billing/admin operations retain access; never expose this role in a browser.
 grant all privileges on all tables in schema public to service_role;
 grant all privileges on all sequences in schema public to service_role;
-grant usage on all types in schema public to authenticated, service_role;
+grant usage on type public.org_role, public.subscription_status, public.money_currency to authenticated, service_role;
