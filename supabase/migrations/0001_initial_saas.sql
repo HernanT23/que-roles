@@ -182,7 +182,6 @@ create table public.recipes (
   yield_unit text not null default 'unit',
   instructions text,
   active boolean not null default true,
-  created_at timestamptz not null default now(),
   unique(organization_id,id)
 );
 
@@ -366,7 +365,6 @@ create policy "active plans visible" on public.subscription_plans for select to 
 create policy "members read subscription" on public.organization_subscriptions for select to authenticated using (public.is_org_member(organization_id));
 -- No authenticated insert/update/delete policy for billing records.
 
-
 -- Secure self-service tenant bootstrap. Client cannot directly insert an organization or assign itself an owner role.
 create or replace function public.create_organization(p_name text, p_slug text)
 returns uuid
@@ -398,4 +396,26 @@ $$;
 revoke all on function public.create_organization(text,text) from public;
 grant execute on function public.create_organization(text,text) to authenticated;
 
--- No commercial plan price is seeded. Configure plan prices only after product/pricing approval.
+-- Explicit least-privilege grants. New Supabase projects no longer expose public tables automatically.
+-- RLS remains the row-level security boundary; these grants only permit the required SQL operations.
+revoke all on all tables in schema public from anon, public;
+revoke all on all sequences in schema public from anon, public;
+grant usage on schema public to authenticated;
+
+grant select on public.organizations to authenticated;
+grant select, insert, update, delete on public.organization_memberships to authenticated;
+grant select, insert, update on public.profiles to authenticated;
+grant select on public.subscription_plans to authenticated;
+grant select on public.organization_subscriptions to authenticated;
+
+grant select, insert, update on
+  public.customers, public.products, public.sales, public.sale_items, public.payments,
+  public.expenses, public.ingredients, public.recipes, public.recipe_items,
+  public.production_batches, public.stock_movements, public.cash_sessions,
+  public.cash_movements, public.audit_logs
+to authenticated;
+
+-- Server-side billing/admin operations retain access; never expose this role in a browser.
+grant all privileges on all tables in schema public to service_role;
+grant all privileges on all sequences in schema public to service_role;
+grant usage on all types in schema public to authenticated, service_role;
