@@ -348,7 +348,11 @@ begin
   end loop;
 end $$;
 
--- Immutable financial/stock history: no direct deletes. Use compensating records.
+-- Immutable financial/stock history: no direct edits or deletes. Use compensating records/RPCs.
+drop policy if exists payments_member_update on public.payments;
+drop policy if exists stock_movements_member_update on public.stock_movements;
+drop policy if exists cash_movements_member_update on public.cash_movements;
+drop policy if exists audit_logs_member_update on public.audit_logs;
 create policy "no direct delete sales" on public.sales for delete to authenticated using (false);
 create policy "no direct delete payments" on public.payments for delete to authenticated using (false);
 create policy "no direct delete stock movements" on public.stock_movements for delete to authenticated using (false);
@@ -398,7 +402,4 @@ $;
 revoke all on function public.create_organization(text,text) from public;
 grant execute on function public.create_organization(text,text) to authenticated;
 
--- Seed a starter plan; pricing can be adjusted before commercial launch.
-insert into public.subscription_plans(code,name,monthly_price_usd,max_members,max_products)
-values ('starter','Inicial',9.00,3,200)
-on conflict (code) do nothing;
+-- No commercial plan price is seeded. Configure plan prices only after product/pricing approval.
