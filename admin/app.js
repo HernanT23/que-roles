@@ -130,7 +130,7 @@ authForm.addEventListener("submit", async event => {
   try {
     if (authMode === "signup") {
       const fullName = document.getElementById("fullName").value.trim();
-      const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName } } });
+      const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin + "/admin/" } });
       if (error) throw error;
       if (data.session) {
         const profileResult = await supabase.from("profiles").upsert({ user_id: data.user.id, full_name: fullName });
