@@ -4,8 +4,8 @@ const when=s=>s?new Date(s).toLocaleString("es-VE"):"—";
 export async function mountModules({supabase,organization,notify,refreshDashboard}){
  const org=organization.id, cache={products:[],customers:[]};
  const field=(label,html)=>`<label class="module-field"><span>${label}</span>${html}</label>`;
- const inp=(n,l,t="text",a="")=>field(l,`<input name="${n}" type="${t}" ${a} required>`);
- const sel=(n,l,opts)=>field(l,`<select name="${n}" required>${opts}</select>`);
+ const inp=(n,l,t="text",a="")=>field(l,`<input name="${n}" type="${t}" ${a} ${["name","sale_price","quantity","unit_price","payment_amount","description","amount","opening_amount","current_quantity"].includes(n)?"required":""}>`);
+ const sel=(n,l,opts)=>field(l,`<select name="${n}" ${["product_id","currency","ingredient_currency","base_unit","payment_method"].includes(n)?"required":""}>${opts}</select>`);
  const form=(title,kind,body,btn)=>`<form class="panel module-form" data-module="${kind}"><h3>${title}</h3><div class="module-grid">${body}</div><button class="primary" type="submit">${btn}</button></form>`;
  const table=(heads,rows,empty)=>`<div class="panel module-panel"><div class="table-wrap"><table><thead><tr>${heads.map(x=>`<th>${x}</th>`).join("")}</tr></thead><tbody>${rows||`<tr><td colspan="${heads.length}">${empty}</td></tr>`}</tbody></table></div></div>`;
  const page=(id,title,desc,body)=>{document.getElementById(id).innerHTML=`<div class="section-head"><div><h2>${title}</h2><p>${desc}</p></div></div>${body}`;};
