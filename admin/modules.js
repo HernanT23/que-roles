@@ -45,8 +45,8 @@ export async function mountModules({supabase,organization,notify,refreshDashboar
  async function caja(){
   const [s,e]=await Promise.all([supabase.from("cash_sessions").select("status,opening_amount,currency,opened_at,closed_at").eq("organization_id",org).order("opened_at",{ascending:false}).limit(20),supabase.from("expenses").select("description,category,amount,currency,paid_at").eq("organization_id",org).order("paid_at",{ascending:false}).limit(40)]);
   if(s.error)throw s.error;if(e.error)throw e.error;
-  const open=(s.data||[]).some(x=>x.status==="open");
-  let body=open?'<div class="notice">Ya hay una caja abierta.</div>':form("Abrir caja","cash-open",inp("opening_amount","Monto inicial","number",'min="0" step="0.01"')+sel("currency","Moneda",'<option>USD</option><option>VES</option>'),"Abrir caja");
+  const open=(s.data||[]).find(x=>x.status==="open");
+  let body=open?'<div class="notice">Hay una caja abierta. <button type="button" class="primary" data-close-cash>Cerrar caja</button></div>':form("Abrir caja","cash-open",inp("opening_amount","Monto inicial","number",'min="0" step="0.01"')+sel("currency","Moneda",'<option>USD</option><option>VES</option>'),"Abrir caja");
   body+=form("Registrar gasto","expense",inp("description","Concepto")+inp("category","Categoría")+inp("amount","Monto","number",'min="0.01" step="0.01"')+sel("currency","Moneda",'<option>USD</option><option>VES</option>'),"Guardar gasto");
   body+=table(["Fecha","Concepto","Categoría","Monto"],(e.data||[]).map(x=>`<tr><td>${when(x.paid_at)}</td><td>${esc(x.description)}</td><td>${esc(x.category||"—")}</td><td>${money(x.amount,x.currency)}</td></tr>`).join(""),"Aún no hay gastos.");
   body+=table(["Apertura","Fondo inicial","Estado"],(s.data||[]).map(x=>`<tr><td>${when(x.opened_at)}</td><td>${money(x.opening_amount,x.currency)}</td><td>${x.status}</td></tr>`).join(""),"No hay cajas.");
@@ -81,6 +81,16 @@ export async function mountModules({supabase,organization,notify,refreshDashboar
  document.addEventListener("click",async e=>{
   const nav=e.target.closest("[data-page]");if(nav&&renderers[nav.dataset.page])render(nav.dataset.page).catch(x=>notify(x.message,true));const action=e.target.closest("[data-action]");const targets={"new-sale":"ventas","add-customer":"clientes","add-stock":"inventario","new-batch":"produccion","add-expense":"caja"};if(action&&targets[action.dataset.action])render(targets[action.dataset.action]).catch(x=>notify(x.message,true));
   const finish=e.target.closest("[data-finish]");if(finish){const good=Number(prompt("Unidades buenas producidas"));if(!Number.isFinite(good)||good<0)return;const waste=Number(prompt("Unidades de merma","0"));if(!Number.isFinite(waste)||waste<0)return;const u=await supabase.auth.getUser();const r=await supabase.from("production_batches").update({status:"closed",actual_good_units:good,waste_units:waste,closed_at:new Date().toISOString(),closed_by:u.data.user.id}).eq("organization_id",org).eq("id",finish.dataset.finish).eq("status","open");if(r.error)notify(r.error.message,true);else{notify("Tanda cerrada.");await render("produccion");}}
+ });
+ document.addEventListener("click",async e=>{
+  const close=e.target.closest("[data-close-cash]");if(!close)return;
+  const raw=prompt("¿Cuánto efectivo contaste al cerrar la caja?");if(raw===null)return;
+  const amount=Number(raw);if(!Number.isFinite(amount)||amount<0){notify("Introduce un monto válido.",true);return;}
+  const u=await supabase.auth.getUser();
+  const q=await supabase.from("cash_sessions").select("id").eq("organization_id",org).eq("status","open").limit(1).maybeSingle();
+  if(q.error||!q.data){notify(q.error?.message||"No se encontró una caja abierta.",true);return;}
+  const r=await supabase.from("cash_sessions").update({closing_amount:amount,status:"closed",closed_at:new Date().toISOString(),closed_by:u.data.user.id}).eq("organization_id",org).eq("id",q.data.id).eq("status","open");
+  if(r.error)notify(r.error.message,true);else{notify("Caja cerrada.");await render("caja");}
  });
  await render("ventas");return {refresh:()=>render(active)};
 }
