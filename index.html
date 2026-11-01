@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Roles de canela en paquete de 3. Pide por WhatsApp y paga con pago móvil.">
+<title>Que Roles</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shrikhand&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: banda rojiza de marca con logo, titulo y foto; luego galeria, encargos y tarjeta de pedido con total en vivo */
+:root{
+  --bg:#FFF8F1;
+  --surface:#FFFFFF;
+  --fg:#3A2118;
+  --muted:#7A5F55;
+  --line:#EBD7CF;
+  --brand:#9C4522;
+  --brand-fg:#FFF3E4;
+  --gold:#E2A946;
+  --accent:#9C4522;
+  --accent-fg:#FFFFFF;
+  --wa:#1F8F4E;
+  --wa-fg:#FFFFFF;
+  --display:'Shrikhand','Trebuchet MS',Georgia,serif;
+  --body:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1F110C;--surface:#2E1B14;--fg:#FBEAE2;--muted:#CBAEA2;--line:#55392E;--brand:#8A3C1B;--accent:#E2A946;--accent-fg:#2A1608;--wa:#3DBE76;--wa-fg:#0B2216;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1F110C;--surface:#2E1B14;--fg:#FBEAE2;--muted:#CBAEA2;--line:#55392E;--brand:#8A3C1B;--accent:#E2A946;--accent-fg:#2A1608;--wa:#3DBE76;--wa-fg:#0B2216;color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.55}
+.in{max-width:1000px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);font-weight:400;line-height:1.08;margin:0;text-wrap:balance}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:3px;border-radius:6px}
+img{display:block}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 24px;border-radius:999px;border:0;font:700 16px var(--body);text-decoration:none;cursor:pointer;text-align:center}
+.btn:hover{filter:brightness(1.07)}
+.btn.gold{background:var(--gold);color:#3A2118}
+.btn.wa{background:var(--wa);color:var(--wa-fg)}
+.btn.line{background:transparent;color:inherit;border:2px solid currentColor}
+.eyebrow{font-size:13px;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+
+/* banda de marca */
+.band{position:relative;background-color:var(--brand);background-image:repeating-linear-gradient(90deg,rgba(0,0,0,.09) 0 16px,transparent 16px 32px);color:var(--brand-fg)}
+.wave{display:block;width:100%;height:32px;margin-bottom:-1px}
+.mark{display:flex;align-items:center;gap:10px;font-family:var(--display);font-size:22px}
+.mark img{width:44px;height:44px;border-radius:50%;box-shadow:0 0 0 2px var(--gold)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-block:16px;flex-wrap:wrap}
+.top a{font-size:14px;text-decoration:none;border-bottom:1px solid rgba(255,243,228,.5)}
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:32px;align-items:center;padding-block:12px 48px}
+.logo{width:96px;height:96px;border-radius:50%;box-shadow:0 0 0 4px var(--gold)}
+.tag{font-family:var(--display);color:var(--gold);font-size:28px;margin:0 0 8px}
+h1{font-size:clamp(38px,7vw,68px)}
+.lead{font-size:18px;max-width:42ch;margin:16px 0 22px;opacity:.92}
+.price{transform:rotate(-2deg);display:inline-flex;align-items:center;gap:14px;background:var(--brand-fg);color:#3A2118;border-radius:22px;padding:12px 22px}
+.price b{font-family:var(--display);font-weight:400;font-size:46px;line-height:1;color:var(--brand)}
+.price span{font-size:15px;line-height:1.25;font-weight:500}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
+.shot{position:relative}
+.shot img.main{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:28px;border:5px solid var(--brand-fg);transform:rotate(-2deg);box-shadow:0 22px 30px -20px rgba(0,0,0,.65)}
+@media (prefers-reduced-motion:no-preference){.shot img.main{animation:rise .8s ease-out both}@keyframes rise{from{opacity:0;transform:translateY(16px) rotate(-2deg)}}}
+.card.minis{background:var(--brand);border-color:var(--brand);color:var(--brand-fg)}
+.card.minis h3{color:var(--gold)}
+:root[data-theme="dark"] .card.minis h3{color:var(--gold)}
+.card.minis p{color:var(--brand-fg);opacity:.88}
+.card.minis .mini-art{background:transparent}
+.card.minis .mini-art img{height:70%}
+.shot img.mascot{position:absolute;width:112px;height:112px;left:-22px;bottom:-22px;border-radius:50%;box-shadow:0 0 0 4px var(--gold)}
+
+section.block{padding-block:48px 8px}
+section.block h2{font-size:clamp(30px,5vw,44px);color:var(--brand)}
+:root[data-theme="dark"] section.block h2{color:var(--gold)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) section.block h2{color:var(--gold)}}
+.sub{color:var(--muted);max-width:52ch;margin:10px 0 24px}
+
+.gal{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.gal img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:18px;background:var(--line)}
+.gal .wide{grid-column:span 2;grid-row:span 2;position:relative;min-height:0}
+.gal .wide img{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto}
+
+.enc{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:24px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.card img{width:100%;aspect-ratio:16/10;object-fit:cover}
+.card .t{padding:20px;display:flex;flex-direction:column;gap:10px;flex:1}
+.card h3{font-size:26px;color:var(--brand)}
+:root[data-theme="dark"] .card h3{color:var(--gold)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .card h3{color:var(--gold)}}
+.card p{margin:0;color:var(--muted)}
+.card .btn{margin-top:auto;align-self:flex-start}
+.mini-art{aspect-ratio:16/10;background:var(--brand);position:relative}
+.card .mini-art img{position:absolute;inset:0;margin:auto;width:auto;height:78%;aspect-ratio:1;border-radius:50%;object-fit:cover;box-shadow:0 0 0 4px var(--gold)}
+
+.order{background:var(--surface);border:1px solid var(--line);border-radius:28px;padding:clamp(20px,4vw,40px);display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-block:48px}
+.order h2{font-size:clamp(30px,5vw,44px)}
+.order p.sub{margin-bottom:0}
+.order>div:first-child{position:sticky;top:16px;align-self:start}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.field label,.field .lbl{font-size:15px;font-weight:700;color:var(--fg)}
+.field input[type=text],.field textarea{font:inherit;color:var(--fg);background:var(--bg);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;width:100%;min-width:0}
+.field textarea{min-height:76px;resize:vertical}
+.qty{display:flex;align-items:center;gap:14px}
+.qty button{width:48px;height:48px;border-radius:50%;border:2px solid var(--fg);background:transparent;color:var(--fg);font:700 24px var(--body);cursor:pointer;line-height:1}
+.qty output{font-family:var(--display);font-size:42px;min-width:2ch;text-align:center;font-variant-numeric:tabular-nums}
+.qty small{color:var(--muted);font-size:14px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.chip{border:1.5px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:8px 14px;font:500 14px var(--body);cursor:pointer}
+.chip[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.total{display:flex;justify-content:space-between;align-items:baseline;border-top:2px dashed var(--line);padding-top:14px;margin:6px 0 16px;font-variant-numeric:tabular-nums}
+.total b{font-family:var(--display);font-weight:400;font-size:40px;color:var(--brand)}
+:root[data-theme="dark"] .total b{color:var(--gold)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .total b{color:var(--gold)}}
+.send{display:flex;flex-direction:column;gap:10px}
+.send .btn.line{color:var(--fg)}
+.nums{font-size:14px;color:var(--muted);margin-top:16px}
+.nums b{color:var(--fg);user-select:all}
+.copy{margin-left:6px;border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:8px;padding:2px 8px;font:500 12px var(--body);cursor:pointer}
+
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg label{position:relative;cursor:pointer;font-size:15px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--fg)}
+.seg input{position:absolute;opacity:0;inset:0;margin:0}
+.seg span{display:inline-block;border:1.5px solid var(--line);background:var(--bg);border-radius:999px;padding:10px 16px}
+.seg input:checked + span{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.seg input:focus-visible + span{outline:3px solid var(--gold);outline-offset:2px}
+.paynote{margin:0;padding:12px 14px;border:1.5px solid var(--line);border-radius:14px;background:var(--bg);font-size:15px}
+.paydata{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:10px 0;font-variant-numeric:tabular-nums}
+.paydata dt{color:var(--muted);font-size:14px;align-self:center}
+.paydata dd{margin:0;font-weight:700}
+.pn{color:var(--muted);font-size:14px;display:block}
+.paydata dd.big{font-family:var(--display);font-weight:400;font-size:22px;color:var(--brand)}
+:root[data-theme="dark"] .paydata dd.big{color:var(--gold)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .paydata dd.big{color:var(--gold)}}
+.copyall{width:100%;margin:4px 0 10px;min-height:44px;font-size:15px}
+.bsline{margin:-6px 0 16px;font-size:14px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.bsline b{color:var(--fg);font-size:17px}
+.tops{display:flex;flex-direction:column;gap:8px}
+.tp{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1.5px solid var(--line);background:var(--bg);border-radius:14px;padding:6px 8px 6px 14px}
+.tp.on{border-color:var(--fg)}
+.tp .n{font-size:15px;font-weight:500;min-width:0;flex:1}
+.tp .c{display:flex;align-items:center;gap:6px;flex:none}
+.tp .c button{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--fg);background:transparent;color:var(--fg);font:700 20px var(--body);cursor:pointer;line-height:1}
+.tp .c button:disabled{opacity:.3;cursor:default}
+.tp .c output{min-width:2ch;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.btn.off{opacity:.45;pointer-events:none}
+.btn.stack{flex-direction:column;gap:0;padding:8px 24px;line-height:1.25;min-height:56px}
+.btn.stack small{font-weight:500;font-size:13px;opacity:.9}
+.hint{font-size:13px;color:var(--muted);margin:2px 0 0}
+.maplink{display:inline-block;font-size:14px;font-weight:700;margin-top:4px}
+.after{font-size:14px;color:var(--muted);margin:12px 0 0}
+footer{background:var(--brand);color:var(--brand-fg)}
+footer .in{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-block:24px;font-size:14px}
+footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
+
+@media (max-width:760px){
+  .hero{grid-template-columns:1fr;gap:28px}
+  .shot{max-width:420px;margin-left:12px}
+  .gal{grid-template-columns:1fr 1fr}
+  .gal .wide{grid-row:span 1;aspect-ratio:4/3}
+  .gal > img:last-child{grid-column:span 2;aspect-ratio:4/3}
+  .enc{grid-template-columns:1fr}
+  .order{grid-template-columns:1fr;gap:20px}
+  .order>div:first-child{position:static}
+}
+</style>
+
+</head>
+<body>
+<div class="band">
+  <div class="in">
+    <div class="top">
+      <span class="mark"><img src="img/logo.png" alt="" width="44" height="44"><span>Que Roles</span></span>
+      <a href="https://www.instagram.com/querolesve/" target="_blank" rel="noopener">@querolesve en Instagram</a>
+    </div>
+    <div class="hero">
+      <div>
+        <div class="tag">Un amor comible</div>
+        <h1>Roles de canela, en paquete de 3</h1>
+        <p class="lead">Masa suave, canela y coberturas generosas. Los llevamos en su cajita, listos para compartir.</p>
+        <div class="price"><b>$5.5</b><span>el paquete<br>de 3 roles</span></div>
+        <div class="cta">
+          <a class="btn gold" href="#pedido">Hacer mi pedido</a>
+          <a class="btn line" href="#encargos">Cumpleaños y minis</a>
+        </div>
+      </div>
+      <div class="shot">
+        <img class="main" src="img/row.jpg" alt="Cajitas de roles de canela con caramelo, glaseado blanco y chocolate">
+        <img class="mascot" src="img/mascot.png" alt="Mascota de Que Roles">
+      </div>
+    </div>
+  </div>
+  <svg class="wave" viewBox="0 0 1440 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 18C140 34 280 30 420 16C560 2 700 -2 860 14C1020 30 1160 34 1300 16C1360 8 1410 10 1440 14V40H0Z" fill="var(--bg)"/></svg>
+</div>
+
+<div class="in">
+  <section class="block">
+    <h2>Así salen de la cocina</h2>
+    <p class="sub">Glaseado de queso crema, choconutella, arequipe, chocolate blanco, oreo en trozos, pistacho y coco. Estas son fotos reales de nuestros pedidos.</p>
+    <div class="gal">
+      <div class="wide"><img src="img/toppings.jpg" alt="Roles con glaseado, chocolate, galleta triturada, pistacho y barquillos"></div>
+      <img src="img/pack.jpg" alt="Paquete de 3 roles con glaseado y la etiqueta de Que Roles">
+      <img src="img/hand.jpg" alt="Roles con chocolate, caramelo y glaseado">
+      <img src="img/choco.jpg" alt="Roles con chocolate, caramelo y galleta triturada">
+      <img src="img/stand.jpg" alt="Puesto de Que Roles con el logo">
+      <img src="img/pack2.jpg" alt="Dos cajitas de roles de canela con glaseado" style="object-position:center 60%">
+    </div>
+  </section>
+
+  <section class="block" id="encargos">
+    <h2>Por encargo</h2>
+    <p class="sub">Estos dos se hacen con tiempo. Escríbenos con la fecha y lo que necesitas.</p>
+    <div class="enc">
+      <article class="card">
+        <img src="img/cake.jpg" alt="Rol de canela gigante de cumpleaños con chocolate y perlas doradas">
+        <div class="t">
+          <h3>Rol de cumpleaños</h3>
+          <p>Un rol grande para celebrar, decorado con chocolate y detalles dorados.</p>
+          <a class="btn wa" id="wab" target="_blank" rel="noopener" href="#">Cotizar por WhatsApp</a>
+        </div>
+      </article>
+      <article class="card minis">
+        <div class="mini-art"><img src="img/mascot.png" alt="Mascota de Que Roles"></div>
+        <div class="t">
+          <h3>Minis</h3>
+          <p>Roles pequeños para eventos, regalos y mesas de postres.</p>
+          <a class="btn gold" id="wam" target="_blank" rel="noopener" href="#">Cotizar por WhatsApp</a>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="order" id="pedido">
+    <div>
+      <h2 style="color:var(--brand)">Arma tu pedido</h2>
+      <p class="sub">Los roles se venden solo en paquete de 3. Elige los paquetes, si retiras o te lo llevamos, y cómo vas a pagar. El pedido sale por WhatsApp y ahí confirmamos el total y recibimos tu pago.</p>
+      <p class="nums">Números: <b>0412-1526493</b><button class="copy" data-num="04121526493" type="button">Copiar</button> · <b>0412-1547207</b><button class="copy" data-num="04121547207" type="button">Copiar</button></p>
+    </div>
+
+    <form id="f" novalidate>
+      <div class="field">
+        <span class="lbl" id="qlbl">Paquetes de 3 roles</span>
+        <div class="qty" role="group" aria-labelledby="qlbl">
+          <button type="button" id="minus" aria-label="Quitar un paquete">−</button>
+          <output id="q" aria-live="polite">1</output>
+          <button type="button" id="plus" aria-label="Agregar un paquete">+</button>
+          <small id="roles">3 roles</small>
+        </div>
+        <div class="chips" id="chips"></div>
+      </div>
+      <div class="field">
+        <label for="name">Tu nombre</label>
+        <input type="text" id="name" autocomplete="name" placeholder="Ej: María">
+      </div>
+      <div class="field">
+        <span class="lbl" id="mlbl">Entrega</span>
+        <div class="seg" role="radiogroup" aria-labelledby="mlbl">
+          <label><input type="radio" name="mode" value="Retiro" checked><span>Retiro</span></label>
+          <label><input type="radio" name="mode" value="Envío a domicilio"><span>Envío a domicilio</span></label>
+        </div>
+      </div>
+      <div class="field" id="addrf" hidden>
+        <label for="addr">Dirección de entrega</label>
+        <input type="text" id="addr" autocomplete="street-address" placeholder="Calle, casa o edificio">
+        <label for="maps" style="margin-top:8px">Ubicación en Google Maps</label>
+        <input type="text" id="maps" inputmode="url" autocomplete="off" placeholder="Pega aquí el enlace de tu ubicación">
+        <p class="hint">Abre Google Maps, busca tu casa, toca Compartir, copia el enlace y pégalo aquí.</p>
+        <a class="maplink" id="mapsopen" href="https://www.google.com/maps" target="_blank" rel="noopener">Abrir Google Maps</a>
+      </div>
+      <div class="field">
+        <span class="lbl">Método de pago</span>
+        <div class="paynote">
+          <b>Pago móvil</b>
+          <dl class="paydata">
+            <dt>Banco</dt><dd>0108 Provincial<button class="copy" data-num="0108" type="button">Copiar</button></dd>
+            <dt>Cédula</dt><dd>31.378.042<button class="copy" data-num="31378042" type="button">Copiar</button></dd>
+            <dt>Teléfono</dt><dd>0412-1547207<button class="copy" data-num="04121547207" type="button">Copiar</button></dd>
+            <dt>Monto</dt><dd class="big" id="paybs">Bs 0,00</dd>
+            <dt>Tasa BCV</dt><dd id="payrate"></dd>
+          </dl>
+          <button class="btn gold copyall" id="copyall" type="button">Copiar todos los datos</button>
+          <span class="pn">Paga en bolívares con el monto de arriba y escribe la referencia aquí abajo. También puedes enviar el comprobante por WhatsApp.</span>
+        </div>
+        <input type="radio" name="pay" value="Pago móvil" checked hidden>
+      </div>
+      <div class="field">
+        <label for="ref">Referencia del pago (opcional)</label>
+        <input type="text" id="ref" inputmode="numeric" autocomplete="off" placeholder="Referencia del banco">
+        <p class="hint">Si aún no pagas, déjalo vacío y mándala por WhatsApp cuando pagues.</p>
+      </div>
+      <div class="field">
+        <span class="lbl" id="tlbl">Coberturas (1 por rol)</span>
+        <div class="tops" id="tops" role="group" aria-labelledby="tlbl"></div>
+        <p class="hint" id="topstat" aria-live="polite"></p>
+      </div>
+      <div class="field">
+        <label for="note">Nota (opcional)</label>
+        <textarea id="note" placeholder="Cobertura que prefieres, para cuándo lo necesitas"></textarea>
+      </div>
+      <div class="total"><span>Total a pagar</span><b id="total">$5.5</b></div>
+      <p class="bsline">En bolívares: <b id="bs"></b></p>
+      <div class="send">
+        <a class="btn wa stack" id="wa1" target="_blank" rel="noopener" href="#"><span>Enviar pedido por WhatsApp</span><small>al 0412-1526493</small></a>
+        <a class="btn line stack" id="wa2" target="_blank" rel="noopener" href="#"><span>Enviar pedido por WhatsApp</span><small>al 0412-1547207</small></a>
+      </div>
+      <p class="after">Por WhatsApp te confirmamos el total (con el costo del envío si es a domicilio), esperamos tu comprobante del pago móvil.</p>
+    </form>
+  </section>
+</div>
+
+<footer>
+  <div class="in">
+    <span class="brand">Que Roles, un amor comible</span>
+    <a href="https://www.instagram.com/querolesve/" target="_blank" rel="noopener">@querolesve</a>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var PRICE=5.5, qty=1, MAX=30;
+  var RATE=889.2553, RATE_DATE='30 oct 2026, de referencia'; // respaldo; la tasa real llega de /api/tasa
+  function fmtNum(n,d){var p=n.toFixed(d).split('.');p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,'.');return d?p[0]+','+p[1]:p[0];}
+  function fmtBs(n){return 'Bs '+fmtNum(n,2);}
+  var N1='584121526493', N2='584121547207';
+  var $=function(id){return document.getElementById(id)};
+  var q=$('q'), total=$('total'), name=$('name'), note=$('note'), roles=$('roles'),
+      wa1=$('wa1'), wa2=$('wa2'), chips=$('chips'), addr=$('addr'), maps=$('maps'), ref=$('ref');
+
+  function money(n){var s=(Math.round(n*100)/100).toFixed(2);return '$'+s.replace(/\.?0+$/,'');}
+  function pk(n){return n+(n===1?' paquete':' paquetes');}
+
+  var TOPS=['Glaseado de queso crema','Choconutella','Arequipe','Chocolate blanco','Oreo en trozos','Pistacho','Coco'];
+  var cnt={}, outs={}, minus={}, plus={}, rows={};
+  function sumC(){return TOPS.reduce(function(a,n){return a+cnt[n];},0);}
+  function buildTops(){
+    var box=$('tops');
+    TOPS.forEach(function(n){
+      cnt[n]=0;
+      var r=document.createElement('div');r.className='tp';
+      var s=document.createElement('span');s.className='n';s.textContent=n;
+      var c=document.createElement('div');c.className='c';
+      var m=document.createElement('button');m.type='button';m.textContent='−';m.setAttribute('aria-label','Quitar '+n);
+      var o=document.createElement('output');o.textContent='0';
+      var p=document.createElement('button');p.type='button';p.textContent='+';p.setAttribute('aria-label','Agregar '+n);
+      m.onclick=function(){if(cnt[n]>0){cnt[n]--;render();}};
+      p.onclick=function(){if(sumC()<qty*3){cnt[n]++;render();}};
+      c.appendChild(m);c.appendChild(o);c.appendChild(p);r.appendChild(s);r.appendChild(c);box.appendChild(r);
+      outs[n]=o;minus[n]=m;plus[n]=p;rows[n]=r;
+    });
+  }
+  function syncTops(){
+    var need=qty*3,s=sumC();
+    for(var i=TOPS.length-1;i>=0&&s>need;i--){var d=Math.min(cnt[TOPS[i]],s-need);cnt[TOPS[i]]-=d;s-=d;}
+    TOPS.forEach(function(n){
+      outs[n].textContent=cnt[n];
+      minus[n].disabled=cnt[n]===0;
+      plus[n].disabled=s>=need;
+      rows[n].classList.toggle('on',cnt[n]>0);
+    });
+    var ok=s===need;
+    $('topstat').textContent=ok?'Listo: '+need+(need===1?' cobertura':' coberturas')+'.':'Elige '+(need-s)+' más: son '+need+' en total, una por rol ('+pk(qty)+').';
+    [wa1,wa2].forEach(function(a){a.classList.toggle('off',!ok);a.setAttribute('aria-disabled',String(!ok));a.tabIndex=ok?0:-1;});
+  }
+
+  [1,2,3,4].forEach(function(n){
+    var b=document.createElement('button');b.type='button';b.className='chip';b.dataset.n=n;
+    b.textContent=pk(n)+' ('+money(n*PRICE)+')';
+    b.onclick=function(){qty=n;render();};
+    chips.appendChild(b);
+  });
+
+  function msg(){
+    var t='Hola, quiero pedir '+pk(qty)+' de 3 roles de canela ('+(qty*3)+' roles). Total: '+money(qty*PRICE)+'.';
+    var mode=document.querySelector('input[name=mode]:checked').value;
+    var pay=document.querySelector('input[name=pay]:checked').value;
+    if(name.value.trim()) t+=' Mi nombre es '+name.value.trim()+'.';
+    var tops=TOPS.filter(function(n){return cnt[n]>0;}).map(function(n){return cnt[n]+' '+n;}).join(', ');
+    if(tops) t+=' Coberturas: '+tops+'.';
+    t+=' Entrega: '+mode+'.';
+    if(mode!=='Retiro' && addr.value.trim()) t+=' Dirección: '+addr.value.trim()+'.';
+    if(mode!=='Retiro' && maps.value.trim()) t+=' Ubicación: '+maps.value.trim()+'.';
+    t+=' Pago por: '+pay+', monto en Bs: '+fmtNum(qty*PRICE*RATE,2)+' (tasa BCV '+fmtNum(RATE,4)+' del '+RATE_DATE+').';
+    t+=ref.value.trim()?' Referencia: '+ref.value.trim()+'.':' Envío la referencia o el comprobante enseguida.';
+    if(note.value.trim()) t+=' Nota: '+note.value.trim();
+    return encodeURIComponent(t);
+  }
+  function render(){
+    $('addrf').hidden=document.querySelector('input[name=mode]:checked').value==='Retiro';
+    syncTops();
+    q.textContent=qty;
+    roles.textContent=(qty*3)+' roles';
+    total.textContent=money(qty*PRICE);
+    $('bs').textContent=fmtBs(qty*PRICE*RATE);
+    $('paybs').textContent=fmtBs(qty*PRICE*RATE);
+    $('payrate').textContent='Bs '+fmtNum(RATE,4)+' por $1 ('+RATE_DATE+')';
+    $('mapsopen').href=addr.value.trim()?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(addr.value.trim()):'https://www.google.com/maps';
+    Array.prototype.forEach.call(chips.children,function(c){c.setAttribute('aria-pressed',String(+c.dataset.n===qty));});
+    var m=msg();
+    wa1.href='https://wa.me/'+N1+'?text='+m;
+    wa2.href='https://wa.me/'+N2+'?text='+m;
+  }
+  $('minus').onclick=function(){if(qty>1){qty--;render();}};
+  $('plus').onclick=function(){if(qty<MAX){qty++;render();}};
+  name.addEventListener('input',render);note.addEventListener('input',render);addr.addEventListener('input',render);maps.addEventListener('input',render);ref.addEventListener('input',render);
+  $('f').addEventListener('change',render);
+  $('f').addEventListener('submit',function(e){e.preventDefault();});
+
+  $('wab').href='https://wa.me/'+N1+'?text='+encodeURIComponent('Hola, quiero cotizar un rol de cumpleaños. Es para el día: ');
+  $('wam').href='https://wa.me/'+N1+'?text='+encodeURIComponent('Hola, quiero cotizar roles mini. Cantidad y fecha: ');
+
+  $('copyall').onclick=function(){
+    var b=this,txt='Pago móvil\nBanco: 0108 Provincial\nCédula: 31378042\nTeléfono: 04121547207\nMonto: '+fmtNum(qty*PRICE*RATE,2).replace(/\./g,'');
+    var done=function(){b.textContent='Datos copiados';setTimeout(function(){b.textContent='Copiar todos los datos';},1800);};
+    try{navigator.clipboard.writeText(txt).then(done,function(){});}catch(e){}
+  };
+  Array.prototype.forEach.call(document.querySelectorAll('.copy'),function(b){
+    b.onclick=function(){
+      var done=function(){b.textContent='Copiado';setTimeout(function(){b.textContent='Copiar';},1500);};
+      try{navigator.clipboard.writeText(b.dataset.num).then(done,function(){});}catch(e){}
+    };
+  });
+  var MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  function fmtDate(s){var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?(+m[3])+' '+MES[+m[2]-1]+' '+m[1]:'';}
+  buildTops();
+  render();
+  // Tasa oficial: primero el servicio propio (si existe), luego la API publica de dolar oficial.
+  function getJson(u){return fetch(u,{cache:'no-store'}).then(function(r){return r.ok?r.json():Promise.reject();});}
+  function applyRate(rate,date){if(rate>1&&rate<100000){RATE=rate;RATE_DATE=fmtDate(date)||'hoy';render();return true;}return false;}
+  getJson('/api/tasa').then(function(d){if(!applyRate(d.rate,d.date))throw 0;}).catch(function(){
+    return getJson('https://ve.dolarapi.com/v1/dolares/oficial').then(function(d){applyRate(Number(d.promedio),d.fechaActualizacion);});
+  }).catch(function(){});
+})();
+</script>
+
+</body>
+</html>
