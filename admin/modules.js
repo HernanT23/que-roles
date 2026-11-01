@@ -1,6 +1,6 @@
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money=(n,c="USD")=>new Intl.NumberFormat("es-VE",{style:"currency",currency:c}).format(Number(n||0));
-const when=s=>s?new Date(s).toLocaleString("es-VE"):"—";
+const when=s=>s?new Date(s).toLocaleString("es-VE",{timeZone:"America/Caracas"}):"—";
 export async function mountModules({supabase,organization,notify,refreshDashboard}){
  const org=organization.id, cache={products:[],customers:[]};
  const field=(label,html)=>`<label class="module-field"><span>${label}</span>${html}</label>`;
