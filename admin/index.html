@@ -32,13 +32,13 @@
     <section class="page" id="inicio">
       <div class="welcome"><div><span class="eyebrow">TU NEGOCIO, BAJO CONTROL</span><h2 id="welcomeTitle">¡Hola! 👋</h2><p>Este es el resumen de tu negocio.</p></div><button class="primary" data-action="new-sale">＋ Nueva venta</button></div>
       <div class="metrics">
-        <article class="metric"><span>Ventas de hoy</span><strong>$128.50</strong><small class="positive">↑ 12% vs. ayer</small></article>
-        <article class="metric"><span>Ganancia estimada</span><strong>$54.20</strong><small>Después del costo de productos</small></article>
-        <article class="metric"><span>Pedidos pendientes</span><strong>4</strong><small>2 listos para entregar</small></article>
-        <article class="metric"><span>Inventario bajo</span><strong>3</strong><small class="warning">Requieren reposición</small></article>
+        <article class="metric"><span>Ventas acumuladas</span><strong id="metricRevenue">$0.00</strong><small>Ventas confirmadas</small></article>
+        <article class="metric"><span>Ventas registradas</span><strong id="metricSales">0</strong><small>En tu negocio</small></article>
+        <article class="metric"><span>Clientes</span><strong id="metricCustomers">0</strong><small>Registrados</small></article>
+        <article class="metric"><span>Productos activos</span><strong id="metricProducts">0</strong><small>En tu catálogo</small></article>
       </div>
       <div class="dashboard-grid">
-        <article class="panel"><div class="panel-head"><div><h3>Ventas recientes</h3><p>Actividad real de tu negocio</p></div><a href="#ventas" data-page="ventas">Ver todas</a></div><div class="table-wrap"><table><thead><tr><th>Pedido</th><th>Cliente</th><th>Total</th><th>Estado</th></tr></thead><tbody id="recentSales"><tr><td colspan="4">Todavía no hay ventas registradas.</td></tr></tbody></table></div></article>
+        <article class="panel"><div class="panel-head"><div><h3>Ventas recientes</h3><p>Actividad real de tu negocio</p></div><a href="#ventas" data-page="ventas">Ver todas</a></div><div class="table-wrap"><table><thead><tr><th>Pedido</th><th>Fecha</th><th>Total</th><th>Estado</th></tr></thead><tbody id="recentSales"><tr><td colspan="4">Todavía no hay ventas registradas.</td></tr></tbody></table></div></article>
         <article class="panel"><div class="panel-head"><div><h3>Tu espacio de trabajo</h3><p>Próximas funciones</p></div></div><div class="task"><span class="task-icon">↗</span><div><strong>Registrar tu primera venta</strong><small>El módulo de ventas será el siguiente en activarse.</small></div></div><div class="task"><span class="task-icon">♙</span><div><strong>Agregar clientes</strong><small>Tu información quedará privada en este negocio.</small></div></div><div class="task"><span class="task-icon">⚖</span><div><strong>Configurar producción</strong><small>Recetas, pesajes y desperdicio.</small></div></div></article>
       </div>
       <article class="panel quick"><div class="panel-head"><div><h3>Accesos rápidos</h3><p>Las tareas más frecuentes</p></div></div><div class="quick-grid"><button data-page="ventas">＋<span>Nueva venta</span></button><button data-page="clientes">♙<span>Agregar cliente</span></button><button data-page="produccion">⚖<span>Registrar pesaje</span></button><button data-page="inventario">▦<span>Entrada de inventario</span></button></div></article>
