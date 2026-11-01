@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { mountModules } from "./modules.js";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -7,17 +8,21 @@ const authTitle = document.getElementById("authTitle");
 const authDescription = document.getElementById("authDescription");
 const authMessage = document.getElementById("authMessage");
 const appShell = document.querySelector(".app-shell");
+const toast = document.getElementById("toast");
 let supabase = null;
 let currentOrg = null;
+let modules = null;
 
 function message(text, success = false) {
   authMessage.textContent = text;
   authMessage.classList.toggle("success", success);
 }
 
-function slugify(value) {
-  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()
-    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 63);
+function notify(text, isError = false) {
+  toast.textContent = text;
+  toast.classList.toggle("error", isError);
+  toast.classList.add("show");
+  window.setTimeout(() => toast.classList.remove("show"), 3200);
 }
 
 async function getMembership(userId) {
@@ -29,26 +34,19 @@ async function getMembership(userId) {
 }
 
 async function loadWorkspace(session) {
-  let membership = await getMembership(session.user.id);
-
-  // First launch: create the user's single workspace automatically.
+  const membership = await getMembership(session.user.id);
   if (!membership?.organizations) {
-    const name = "Mi negocio";
-    const slug = slugify(name) + "-" + session.user.id.replace(/-/g, "").slice(0, 8);
-    const { error } = await supabase.rpc("create_organization", { p_name: name, p_slug: slug });
-    if (error) throw error;
-    membership = await getMembership(session.user.id);
+    throw new Error("No se encontró el espacio de trabajo de esta sesión. Por seguridad, la aplicación no crea organizaciones nuevas desde el navegador. Conserva la sesión original del dispositivo.");
   }
-
-  if (!membership?.organizations) throw new Error("No se pudo preparar el espacio de trabajo.");
   currentOrg = membership.organizations;
   document.getElementById("workspaceName").textContent = currentOrg.name;
-  document.getElementById("userLabel").textContent = "Administrador";
+  document.getElementById("userLabel").textContent = "Propietario";
   document.getElementById("userEmail").textContent = "Acceso automático";
   document.getElementById("welcomeTitle").textContent = "¡Hola! 👋";
   authScreen.classList.add("hidden");
   appShell.classList.remove("hidden");
   await loadDashboard();
+  modules = await mountModules({ supabase, organization: currentOrg, notify, refreshDashboard: loadDashboard });
 }
 
 async function loadDashboard() {
@@ -124,9 +122,14 @@ async function startApp() {
 }
 
 const titleMap={inicio:"Resumen del negocio",ventas:"Ventas",clientes:"Clientes",inventario:"Inventario",produccion:"Producción y pesajes",caja:"Caja y gastos",reportes:"Reportes"};
-const pages=[...document.querySelectorAll(".page")], nav=[...document.querySelectorAll("[data-page]")], title=document.getElementById("pageTitle"), sidebar=document.querySelector(".sidebar"), toast=document.getElementById("toast");
+const pages=[...document.querySelectorAll(".page")], nav=[...document.querySelectorAll("[data-page]")], title=document.getElementById("pageTitle"), sidebar=document.querySelector(".sidebar");
 function showPage(id){if(!titleMap[id])return;pages.forEach(p=>p.classList.toggle("hidden",p.id!==id));nav.forEach(n=>n.classList.toggle("active",n.dataset.page===id));title.textContent=titleMap[id];sidebar.classList.remove("open");history.replaceState(null,"","#"+id);window.scrollTo({top:0,behavior:"smooth"});}
-document.addEventListener("click",e=>{const p=e.target.closest("[data-page]");if(p){e.preventDefault();showPage(p.dataset.page);return;}const a=e.target.closest("[data-action]");if(a){const labels={"new-sale":"El módulo de ventas se activará en la siguiente etapa.","add-customer":"El módulo de clientes se activará en la siguiente etapa.","add-stock":"El inventario se activará en la siguiente etapa.","new-batch":"Producción y pesajes se activarán en la siguiente etapa.","add-expense":"Caja y gastos se activarán en la siguiente etapa."};toast.textContent=labels[a.dataset.action]||"Disponible próximamente.";toast.classList.add("show");setTimeout(()=>toast.classList.remove("show"),2600);}});
+document.addEventListener("click",e=>{
+  const p=e.target.closest("[data-page]");
+  if(p){e.preventDefault();showPage(p.dataset.page);return;}
+  const a=e.target.closest("[data-action]");
+  if(a){const targets={"new-sale":"ventas","add-customer":"clientes","add-stock":"inventario","new-batch":"produccion","add-expense":"caja"};if(targets[a.dataset.action])showPage(targets[a.dataset.action]);}
+});
 document.getElementById("menuBtn").addEventListener("click",()=>sidebar.classList.toggle("open"));
 showPage(location.hash.slice(1)||"inicio");
 if("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("/admin/sw.js").catch(()=>{});
