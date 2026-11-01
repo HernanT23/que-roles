@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#47291f">
+<meta name="description" content="Panel de administración Que Roles SaaS">
+<title>Que Roles · Administración</title>
+<link rel="manifest" href="/admin/manifest.webmanifest">
+<link rel="stylesheet" href="/admin/app.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="/admin/"><span class="brand-mark">QR</span><span>Que Roles<small>GESTIÓN</small></span></a>
+    <div class="workspace"><span class="muted">NEGOCIO ACTIVO</span><strong>Que Roles</strong><span class="pill">Plan de prueba</span></div>
+    <nav aria-label="Navegación principal">
+      <a class="nav-item active" href="#inicio" data-page="inicio"><span>⌂</span> Inicio</a>
+      <a class="nav-item" href="#ventas" data-page="ventas"><span>↗</span> Ventas</a>
+      <a class="nav-item" href="#clientes" data-page="clientes"><span>♙</span> Clientes</a>
+      <a class="nav-item" href="#inventario" data-page="inventario"><span>▦</span> Inventario</a>
+      <a class="nav-item" href="#produccion" data-page="produccion"><span>⚖</span> Producción y pesajes</a>
+      <a class="nav-item" href="#caja" data-page="caja"><span>＄</span> Caja y gastos</a>
+      <a class="nav-item" href="#reportes" data-page="reportes"><span>▤</span> Reportes</a>
+    </nav>
+    <div class="sidebar-bottom"><span class="avatar">QR</span><span><strong>Administrador</strong><small>Vista de demostración</small></span></div>
+  </aside>
+  <main class="main">
+    <header class="topbar"><button class="menu" id="menuBtn" aria-label="Abrir menú">☰</button><div><span class="muted">DOMINGO · PANEL DE CONTROL</span><h1 id="pageTitle">Resumen del negocio</h1></div><button class="user-chip" type="button">QR <span>Que Roles</span></button></header>
+    <div class="demo-banner">VISTA PRELIMINAR · Datos de ejemplo, todavía no conectada a una base de datos.</div>
+    <section class="page" id="inicio">
+      <div class="welcome"><div><span class="eyebrow">TU NEGOCIO, BAJO CONTROL</span><h2>¡Hola! 👋</h2><p>Este es el resumen de Que Roles.</p></div><button class="primary" data-action="new-sale">＋ Nueva venta</button></div>
+      <div class="metrics">
+        <article class="metric"><span>Ventas de hoy</span><strong>$128.50</strong><small class="positive">↑ 12% vs. ayer</small></article>
+        <article class="metric"><span>Ganancia estimada</span><strong>$54.20</strong><small>Después del costo de productos</small></article>
+        <article class="metric"><span>Pedidos pendientes</span><strong>4</strong><small>2 listos para entregar</small></article>
+        <article class="metric"><span>Inventario bajo</span><strong>3</strong><small class="warning">Requieren reposición</small></article>
+      </div>
+      <div class="dashboard-grid">
+        <article class="panel"><div class="panel-head"><div><h3>Ventas recientes</h3><p>Actividad de ejemplo</p></div><a href="#ventas" data-page="ventas">Ver todas</a></div><div class="table-wrap"><table><thead><tr><th>Pedido</th><th>Cliente</th><th>Total</th><th>Estado</th></tr></thead><tbody><tr><td>#QR-1048</td><td>María G.</td><td>$16.50</td><td><span class="status paid">Pagado</span></td></tr><tr><td>#QR-1047</td><td>José R.</td><td>$11.00</td><td><span class="status pending">Pendiente</span></td></tr><tr><td>#QR-1046</td><td>Laura P.</td><td>$22.00</td><td><span class="status paid">Pagado</span></td></tr></tbody></table></div></article>
+        <article class="panel"><div class="panel-head"><div><h3>Atención de hoy</h3><p>Lista de ejemplo</p></div></div><div class="task"><span class="task-icon">⚖</span><div><strong>Registrar pesaje</strong><small>Preparar tanda de roles</small></div><span class="dot"></span></div><div class="task"><span class="task-icon">▦</span><div><strong>Reponer mantequilla</strong><small>Quedan 350 g</small></div><span class="dot amber"></span></div><div class="task"><span class="task-icon">＄</span><div><strong>Cerrar caja</strong><small>Sesión aún abierta</small></div><span class="dot"></span></div></article>
+      </div>
+      <article class="panel quick"><div class="panel-head"><div><h3>Accesos rápidos</h3><p>Las tareas más frecuentes</p></div></div><div class="quick-grid"><button data-page="ventas">＋<span>Nueva venta</span></button><button data-page="clientes">♙<span>Agregar cliente</span></button><button data-page="produccion">⚖<span>Registrar pesaje</span></button><button data-page="inventario">▦<span>Entrada de inventario</span></button></div></article>
+    </section>
+    <section class="page hidden" id="ventas"><div class="section-head"><div><h2>Ventas</h2><p>Registra ventas y controla pagos pendientes.</p></div><button class="primary" data-action="new-sale">＋ Nueva venta</button></div><div class="empty-panel"><span>↗</span><h3>Registro de ventas</h3><p>El módulo conectado permitirá guardar ventas, productos, abonos, métodos de pago y estados de entrega.</p></div></section>
+    <section class="page hidden" id="clientes"><div class="section-head"><div><h2>Clientes</h2><p>Contactos, pedidos e historial de compras.</p></div><button class="primary" data-action="add-customer">＋ Nuevo cliente</button></div><div class="empty-panel"><span>♙</span><h3>Tu cartera de clientes</h3><p>Podrás consultar datos, direcciones, deudas y frecuencia de compra.</p></div></section>
+    <section class="page hidden" id="inventario"><div class="section-head"><div><h2>Inventario</h2><p>Ingredientes, productos terminados y movimientos.</p></div><button class="primary" data-action="add-stock">＋ Registrar entrada</button></div><div class="empty-panel"><span>▦</span><h3>Control de existencias</h3><p>Entradas, consumos de producción, ventas, mermas y ajustes quedarán registrados.</p></div></section>
+    <section class="page hidden" id="produccion"><div class="section-head"><div><h2>Producción y pesajes</h2><p>Registra cantidades reales, rendimiento y desperdicio.</p></div><button class="primary" data-action="new-batch">＋ Nueva tanda</button></div><div class="empty-panel"><span>⚖</span><h3>Registro de pesaje</h3><p>La pantalla de producción comparará los gramos previstos con los pesados y calculará el rendimiento real de cada tanda.</p></div></section>
+    <section class="page hidden" id="caja"><div class="section-head"><div><h2>Caja y gastos</h2><p>Control de efectivo, pagos y egresos.</p></div><button class="primary" data-action="add-expense">＋ Registrar gasto</button></div><div class="empty-panel"><span>＄</span><h3>Movimientos de dinero</h3><p>Separaremos ventas, pagos recibidos, gastos, cuentas por cobrar y saldo de caja.</p></div></section>
+    <section class="page hidden" id="reportes"><div class="section-head"><div><h2>Reportes</h2><p>Comprende cómo está funcionando tu negocio.</p></div></div><div class="empty-panel"><span>▤</span><h3>Indicadores del negocio</h3><p>Ventas netas, costos, utilidad, gastos, rendimiento de producción y rotación de inventario.</p></div></section>
+    <footer>Que Roles SaaS <span>Una gestión más dulce para tu negocio.</span></footer>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="/admin/app.js"></script>
+</body>
+</html>
