@@ -3,66 +3,54 @@ import { createClient } from "@supabase/supabase-js";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const authScreen = document.getElementById("authScreen");
-const appShell = document.querySelector(".app-shell");
-const authForm = document.getElementById("authForm");
-const orgForm = document.getElementById("orgForm");
-const authMessage = document.getElementById("authMessage");
-const authSwitch = document.getElementById("authSwitch");
 const authTitle = document.getElementById("authTitle");
 const authDescription = document.getElementById("authDescription");
-const authSubmit = document.getElementById("authSubmit");
-const nameField = document.getElementById("nameField");
-const signOutAuth = document.getElementById("signOutAuth");
+const authMessage = document.getElementById("authMessage");
+const appShell = document.querySelector(".app-shell");
 let supabase = null;
-let authMode = "login";
 let currentOrg = null;
 
 function message(text, success = false) {
   authMessage.textContent = text;
   authMessage.classList.toggle("success", success);
 }
-function setMode(mode) {
-  authMode = mode;
-  const signup = mode === "signup";
-  authTitle.textContent = signup ? "Crea tu cuenta" : "Bienvenido";
-  authDescription.textContent = signup ? "Regístrate para crear el espacio de trabajo de tu negocio." : "Inicia sesión para entrar a tu espacio de trabajo.";
-  nameField.classList.toggle("hidden", !signup);
-  document.getElementById("fullName").required = signup;
-  authSubmit.textContent = signup ? "Crear cuenta" : "Iniciar sesión";
-  authSwitch.textContent = signup ? "¿Ya tienes cuenta? Iniciar sesión" : "¿No tienes cuenta? Crear cuenta";
-  document.getElementById("password").autocomplete = signup ? "new-password" : "current-password";
-  message("");
-}
+
 function slugify(value) {
-  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 63);
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 63);
 }
-function showOnboarding() {
-  authForm.classList.add("hidden");
-  authSwitch.classList.add("hidden");
-  orgForm.classList.remove("hidden");
-  signOutAuth.classList.remove("hidden");
-  authTitle.textContent = "Un último paso";
-  authDescription.textContent = "Tu cuenta está lista. Ahora crea tu negocio.";
-  message("");
-}
-async function loadWorkspace(session) {
+
+async function getMembership(userId) {
   const { data, error } = await supabase.from("organization_memberships")
     .select("organization_id, role, organizations(id,name,slug,timezone)")
-    .eq("user_id", session.user.id).limit(1).maybeSingle();
+    .eq("user_id", userId).limit(1).maybeSingle();
   if (error) throw error;
-  if (!data?.organizations) {
-    showOnboarding();
-    return;
+  return data;
+}
+
+async function loadWorkspace(session) {
+  let membership = await getMembership(session.user.id);
+
+  // First launch: create the user's single workspace automatically.
+  if (!membership?.organizations) {
+    const name = "Mi negocio";
+    const slug = slugify(name) + "-" + session.user.id.replace(/-/g, "").slice(0, 8);
+    const { error } = await supabase.rpc("create_organization", { p_name: name, p_slug: slug });
+    if (error) throw error;
+    membership = await getMembership(session.user.id);
   }
-  currentOrg = data.organizations;
+
+  if (!membership?.organizations) throw new Error("No se pudo preparar el espacio de trabajo.");
+  currentOrg = membership.organizations;
+  document.getElementById("workspaceName").textContent = currentOrg.name;
+  document.getElementById("userLabel").textContent = "Administrador";
+  document.getElementById("userEmail").textContent = "Acceso automático";
+  document.getElementById("welcomeTitle").textContent = "¡Hola! 👋";
   authScreen.classList.add("hidden");
   appShell.classList.remove("hidden");
-  document.getElementById("workspaceName").textContent = currentOrg.name;
-  document.getElementById("userEmail").textContent = session.user.email || "";
-  document.getElementById("userLabel").textContent = session.user.user_metadata?.full_name || "Mi cuenta";
-  document.getElementById("welcomeTitle").textContent = "¡Hola, " + (session.user.user_metadata?.full_name?.split(" ")[0] || "bienvenido") + "! 👋";
   await loadDashboard();
 }
+
 async function loadDashboard() {
   const orgId = currentOrg.id;
   const [sales, customers, products, recent] = await Promise.all([
@@ -91,84 +79,50 @@ async function loadDashboard() {
     for (const sale of recent.data) {
       const tr = document.createElement("tr");
       const cells = ["#" + sale.sale_number, new Date(sale.created_at).toLocaleDateString("es-VE"), (sale.currency === "VES" ? "Bs. " : "$") + Number(sale.total).toFixed(2), sale.status === "confirmed" ? "Confirmada" : sale.status];
-      cells.forEach((value, i) => { const td = document.createElement("td"); td.textContent = value; tr.append(td); });
+      cells.forEach(value => { const td = document.createElement("td"); td.textContent = value; tr.append(td); });
       tbody.append(tr);
     }
   }
 }
-async function handleSession(session) {
-  if (!session) {
-    currentOrg = null;
-    appShell.classList.add("hidden");
-    authScreen.classList.remove("hidden");
-    authForm.classList.remove("hidden");
-    orgForm.classList.add("hidden");
-    authSwitch.classList.remove("hidden");
-    signOutAuth.classList.add("hidden");
+
+async function startApp() {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    authTitle.textContent = "Configuración pendiente";
+    authDescription.textContent = "Falta configurar la conexión con Supabase en Vercel Preview.";
+    message("No están configuradas las variables públicas de Supabase. No introduzcas claves secretas aquí.");
     return;
   }
-  try { await loadWorkspace(session); }
-  catch (error) { authScreen.classList.remove("hidden"); appShell.classList.add("hidden"); message("No se pudo cargar tu negocio: " + (error.message || "Error de conexión")); }
-}
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  authTitle.textContent = "Configuración pendiente";
-  authDescription.textContent = "La interfaz ya está preparada. Falta configurar las variables públicas de conexión de Supabase en el entorno Preview de Vercel.";
-  authForm.classList.add("hidden"); authSwitch.classList.add("hidden");
-  message("Faltan VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY. No introduzcas aquí claves secretas.");
-} else {
-  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
-  supabase.auth.getSession().then(({ data, error }) => error ? message(error.message) : handleSession(data.session));
-  supabase.auth.onAuthStateChange((event, session) => { if (event === "SIGNED_OUT") setTimeout(() => handleSession(null), 0); });
-}
-authSwitch.addEventListener("click", () => setMode(authMode === "login" ? "signup" : "login"));
-authForm.addEventListener("submit", async event => {
-  event.preventDefault();
-  if (!supabase) return;
-  authSubmit.disabled = true; message("Procesando...");
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
+
+  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+  });
+
   try {
-    if (authMode === "signup") {
-      const fullName = document.getElementById("fullName").value.trim();
-      const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin + "/admin/" } });
-      if (error) throw error;
-      if (data.session) {
-        const profileResult = await supabase.from("profiles").upsert({ user_id: data.user.id, full_name: fullName });
-        if (profileResult.error) throw profileResult.error;
-        await handleSession(data.session);
-      } else {
-        setMode("login");
-        message("Cuenta creada. Revisa tu correo y confirma la dirección antes de iniciar sesión.", true);
+    authTitle.textContent = "Preparando Que Roles";
+    authDescription.textContent = "Estamos abriendo tu espacio de trabajo…";
+    const { data: existing, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+
+    let session = existing.session;
+    if (!session) {
+      const { data, error } = await supabase.auth.signInAnonymously();
+      if (error) {
+        if (/anonymous|disabled|not enabled/i.test(error.message || "")) {
+          throw new Error("Falta activar el acceso anónimo en Supabase: Authentication → Sign In / Providers → Anonymous Sign-Ins.");
+        }
+        throw error;
       }
-    } else {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      await handleSession(data.session);
+      session = data.session;
     }
-  } catch (error) { message(error.message || "No se pudo completar la operación."); }
-  finally { authSubmit.disabled = false; }
-});
-orgForm.addEventListener("submit", async event => {
-  event.preventDefault();
-  if (!supabase) return;
-  const name = document.getElementById("orgName").value.trim();
-  const slug = slugify(name);
-  const button = orgForm.querySelector("button");
-  button.disabled = true; message("Creando tu negocio...");
-  try {
-    if (slug.length < 2) throw new Error("El nombre debe contener al menos dos letras o números.");
-    const { data: sessionDataBefore } = await supabase.auth.getSession();
-    const uniqueSlug = (slug.slice(0, 55) + "-" + sessionDataBefore.session.user.id.slice(0, 6)).slice(0, 63);
-    const { data, error } = await supabase.rpc("create_organization", { p_name: name, p_slug: uniqueSlug });
-    if (error) throw error;
-    const { data: sessionData } = await supabase.auth.getSession();
-    await handleSession(sessionData.session);
-  } catch (error) { message(error.message || "No se pudo crear el negocio."); }
-  finally { button.disabled = false; }
-});
-async function logout() { if (supabase) await supabase.auth.signOut(); }
-document.getElementById("signOut").addEventListener("click", logout);
-signOutAuth.addEventListener("click", logout);
+    if (!session) throw new Error("Supabase no devolvió una sesión válida.");
+    await loadWorkspace(session);
+  } catch (error) {
+    authTitle.textContent = "No se pudo abrir Que Roles";
+    authDescription.textContent = "Revisa la conexión e inténtalo nuevamente.";
+    message(error.message || "Error de conexión con Supabase.");
+  }
+}
+
 const titleMap={inicio:"Resumen del negocio",ventas:"Ventas",clientes:"Clientes",inventario:"Inventario",produccion:"Producción y pesajes",caja:"Caja y gastos",reportes:"Reportes"};
 const pages=[...document.querySelectorAll(".page")], nav=[...document.querySelectorAll("[data-page]")], title=document.getElementById("pageTitle"), sidebar=document.querySelector(".sidebar"), toast=document.getElementById("toast");
 function showPage(id){if(!titleMap[id])return;pages.forEach(p=>p.classList.toggle("hidden",p.id!==id));nav.forEach(n=>n.classList.toggle("active",n.dataset.page===id));title.textContent=titleMap[id];sidebar.classList.remove("open");history.replaceState(null,"","#"+id);window.scrollTo({top:0,behavior:"smooth"});}
@@ -176,3 +130,4 @@ document.addEventListener("click",e=>{const p=e.target.closest("[data-page]");if
 document.getElementById("menuBtn").addEventListener("click",()=>sidebar.classList.toggle("open"));
 showPage(location.hash.slice(1)||"inicio");
 if("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("/admin/sw.js").catch(()=>{});
+startApp();
