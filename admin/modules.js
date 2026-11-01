@@ -79,7 +79,7 @@ export async function mountModules({supabase,organization,notify,refreshDashboar
  }
  document.addEventListener("submit",submit);
  document.addEventListener("click",async e=>{
-  const nav=e.target.closest("[data-page]");if(nav&&renderers[nav.dataset.page])render(nav.dataset.page).catch(x=>notify(x.message,true));
+  const nav=e.target.closest("[data-page]");if(nav&&renderers[nav.dataset.page])render(nav.dataset.page).catch(x=>notify(x.message,true));const action=e.target.closest("[data-action]");const targets={"new-sale":"ventas","add-customer":"clientes","add-stock":"inventario","new-batch":"produccion","add-expense":"caja"};if(action&&targets[action.dataset.action])render(targets[action.dataset.action]).catch(x=>notify(x.message,true));
   const finish=e.target.closest("[data-finish]");if(finish){const good=Number(prompt("Unidades buenas producidas"));if(!Number.isFinite(good)||good<0)return;const waste=Number(prompt("Unidades de merma","0"));if(!Number.isFinite(waste)||waste<0)return;const u=await supabase.auth.getUser();const r=await supabase.from("production_batches").update({status:"closed",actual_good_units:good,waste_units:waste,closed_at:new Date().toISOString(),closed_by:u.data.user.id}).eq("organization_id",org).eq("id",finish.dataset.finish).eq("status","open");if(r.error)notify(r.error.message,true);else{notify("Tanda cerrada.");await render("produccion");}}
  });
  await render("ventas");return {refresh:()=>render(active)};
