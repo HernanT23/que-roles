@@ -29,8 +29,15 @@ export async function mountModules({supabase,organization,notify,refreshDashboar
   page("inventario","Inventario","Productos terminados y materias primas.",body);
  }
  async function ventas(){
-  const {data,error}=await supabase.from("sales").select("sale_number,total,currency,status,created_at,customers(name),sale_items(description,quantity)").eq("organization_id",org).order("created_at",{ascending:false}).limit(50);if(error)throw error;
-  let body=form("Nueva venta","sale",sel("product_id","Producto",`<option value="">Selecciona</option>${cache.products.map(x=>`<option value="${x.id}" data-price="${x.sale_price}">${esc(x.name)} · ${money(x.sale_price,x.currency)}</option>`).join("")}`)+sel("customer_id","Cliente",`<option value="">Venta directa</option>${cache.customers.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("")}`)+inp("quantity","Cantidad","number",'min="0.001" step="0.001"')+inp("unit_price","Precio unitario","number",'min="0" step="0.01"')+inp("payment_amount","Abono recibido","number",'min="0" step="0.01" value="0"')+sel("payment_method","Método de pago",'<option value="cash">Efectivo</option><option value="pago_movil">Pago móvil</option><option value="transfer">Transferencia</option><option value="card">Tarjeta</option><option value="zelle">Zelle</option><option value="other">Otro</option>')+inp("notes","Notas"),"Guardar venta");
+  const [salesResult,ordersResult]=await Promise.all([
+   supabase.from("sales").select("sale_number,total,currency,status,created_at,customers(name),sale_items(description,quantity)").eq("organization_id",org).order("created_at",{ascending:false}).limit(50),
+   supabase.from("web_orders").select("*").eq("organization_id",org).eq("status","pending").order("created_at",{ascending:false}).limit(50)
+  ]);
+  if(salesResult.error)throw salesResult.error;if(ordersResult.error)throw ordersResult.error;
+  const data=salesResult.data||[], orders=ordersResult.data||[];
+  let pendingRows=orders.map(o=>`<tr><td>${when(o.created_at)}</td><td><b>${esc(o.customer_name)}</b><br>${esc(o.customer_phone||"—")}</td><td>${o.quantity_packages} paquete(s) · ${esc(o.toppings||{})}</td><td>${esc(o.requested_for)}<br>${esc(o.fulfillment)}${o.delivery_address?" · "+esc(o.delivery_address):""}</td><td>${money(o.total,o.currency)}<br>${o.payment_timing==="advance"?"Anticipado":"Al recibir"}<br><small>${o.payment_reference?"Ref. "+esc(o.payment_reference):"Sin referencia"} · ${o.payment_status==="pending_verification"?"Por verificar":"No pagado"}</small></td><td><button type="button" class="primary" data-confirm-web-order="${o.id}">Confirmar</button> <button type="button" data-reject-web-order="${o.id}">Rechazar</button></td></tr>`).join("");
+  let body='<div class="panel module-panel"><h3>Pedidos recibidos desde la página</h3><p class="form-hint">Confirma el pedido cuando revises los datos. Si es anticipado, verifica primero el Pago Móvil y su referencia.</p><div class="table-wrap"><table><thead><tr><th>Recibido</th><th>Cliente</th><th>Pedido</th><th>Fecha / entrega</th><th>Total / pago</th><th>Acción</th></tr></thead><tbody>'+(pendingRows||'<tr><td colspan="6">No hay pedidos web pendientes.</td></tr>')+'</tbody></table></div></div>';
+  body+=form("Nueva venta","sale",sel("product_id","Producto",`<option value="">Selecciona</option>${cache.products.map(x=>`<option value="${x.id}" data-price="${x.sale_price}">${esc(x.name)} · ${money(x.sale_price,x.currency)}</option>`).join("")}`)+sel("customer_id","Cliente",`<option value="">Venta directa</option>${cache.customers.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("")}`)+inp("quantity","Cantidad","number",'min="0.001" step="0.001"')+inp("unit_price","Precio unitario","number",'min="0" step="0.01"')+inp("payment_amount","Abono recibido","number",'min="0" step="0.01" value="0"')+sel("payment_method","Método de pago",'<option value="cash">Efectivo</option><option value="pago_movil">Pago móvil</option><option value="transfer">Transferencia</option><option value="card">Tarjeta</option><option value="zelle">Zelle</option><option value="other">Otro</option>')+inp("notes","Notas"),"Guardar venta");
   body+='<p class="form-hint">Abono cero = venta pendiente. El stock se descuenta si el producto lo controla.</p>';
   body+=table(["N.º","Fecha","Cliente","Detalle","Total","Estado"],(data||[]).map(x=>`<tr><td>#${x.sale_number}</td><td>${when(x.created_at)}</td><td>${esc(x.customers?.name||"Directa")}</td><td>${(x.sale_items||[]).map(i=>`${esc(i.description)} × ${i.quantity}`).join(", ")}</td><td>${money(x.total,x.currency)}</td><td>${x.status}</td></tr>`).join(""),"Aún no hay ventas.");
   page("ventas","Ventas","Registra pedidos, abonos y movimientos de stock.",body);
@@ -79,6 +86,22 @@ export async function mountModules({supabase,organization,notify,refreshDashboar
  }
  document.addEventListener("submit",submit);
  document.addEventListener("click",async e=>{
+  const confirmOrder=e.target.closest("[data-confirm-web-order]");
+  if(confirmOrder){
+    if(!window.confirm("Confirma que revisaste el pedido y, si es anticipado, verificaste el pago en tu banco."))return;
+    confirmOrder.disabled=true;
+    const r=await supabase.rpc("confirm_web_order",{p_order_id:confirmOrder.dataset.confirmWebOrder});
+    if(r.error){notify(r.error.message,true);confirmOrder.disabled=false;return;}
+    notify("Pedido convertido en venta.");
+    await refreshDashboard();await render("ventas");return;
+  }
+  const rejectOrder=e.target.closest("[data-reject-web-order]");
+  if(rejectOrder){
+    if(!window.confirm("¿Rechazar este pedido web?"))return;
+    const r=await supabase.from("web_orders").update({status:"rejected"}).eq("organization_id",org).eq("id",rejectOrder.dataset.rejectWebOrder).eq("status","pending");
+    if(r.error){notify(r.error.message,true);return;}
+    notify("Pedido rechazado.");await render("ventas");return;
+  }
   const nav=e.target.closest("[data-page]");if(nav&&renderers[nav.dataset.page])render(nav.dataset.page).catch(x=>notify(x.message,true));const action=e.target.closest("[data-action]");const targets={"new-sale":"ventas","add-customer":"clientes","add-stock":"inventario","new-batch":"produccion","add-expense":"caja"};if(action&&targets[action.dataset.action])render(targets[action.dataset.action]).catch(x=>notify(x.message,true));
   const finish=e.target.closest("[data-finish]");if(finish){const rawGood=prompt("Unidades buenas producidas");if(rawGood===null||rawGood.trim()==="")return;const good=Number(rawGood);if(!Number.isFinite(good)||good<0)return;const rawWaste=prompt("Unidades de merma","0");if(rawWaste===null||rawWaste.trim()==="")return;const waste=Number(rawWaste);if(!Number.isFinite(waste)||waste<0)return;const u=await supabase.auth.getUser();const r=await supabase.from("production_batches").update({status:"closed",actual_good_units:good,waste_units:waste,closed_at:new Date().toISOString(),closed_by:u.data.user.id}).eq("organization_id",org).eq("id",finish.dataset.finish).eq("status","open");if(r.error)notify(r.error.message,true);else{notify("Tanda cerrada.");await render("produccion");}}
  });
