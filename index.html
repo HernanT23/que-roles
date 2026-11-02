@@ -381,7 +381,7 @@ footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
   function msg(){
     var t='Hola, quiero pedir '+pk(qty)+' de 3 roles de canela ('+(qty*3)+' roles). Total: '+money(qty*PRICE)+'.';
     var mode=document.querySelector('input[name=mode]:checked').value;
-    var pay=document.querySelector('input[name=pay]:checked').value;
+    var pay=document.querySelector('input[name=paytiming]:checked').value==='advance'?'Pago móvil anticipado (por verificar)':'Pago al retirar o recibir';
     if(name.value.trim()) t+=' Mi nombre es '+name.value.trim()+'.';
     if(phone.value.trim()) t+=' Teléfono: '+phone.value.trim()+'.';
     if(requestedFor.value) t+=' Fecha solicitada: '+requestedFor.value+'.';
