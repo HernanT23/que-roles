@@ -309,10 +309,7 @@ footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
       </div>
       <div class="total"><span>Total a pagar</span><b id="total">$5.5</b></div>
       <p class="bsline">En bolívares: <b id="bs"></b></p>
-      <div class="send">
-        <a class="btn wa stack" id="wa1" target="_blank" rel="noopener" href="#"><span>Enviar pedido por WhatsApp</span><small>al 0412-1526493</small></a>
-        <a class="btn line stack" id="wa2" target="_blank" rel="noopener" href="#"><span>Enviar pedido por WhatsApp</span><small>al 0412-1547207</small></a>
-      </div>
+      <div class="send"><button class="btn wa stack" id="submitOrder" type="button"><span>Registrar pedido y enviar por WhatsApp</span><small>Pedido automático a Que Roles</small></button><p id="orderFeedback" class="hint" role="status" aria-live="polite"></p></div>
       <p class="after">Por WhatsApp te confirmamos el total (con el costo del envío si es a domicilio), esperamos tu comprobante del pago móvil.</p>
     </form>
   </section>
@@ -332,8 +329,10 @@ footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
   function fmtNum(n,d){var p=n.toFixed(d).split('.');p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,'.');return d?p[0]+','+p[1]:p[0];}
   function fmtBs(n){return 'Bs '+fmtNum(n,2);}
   var N1='584121526493', N2='584121547207';
+  var SUPABASE_URL='https://gwbmniwceyqxmnbctenz.supabase.co';
+  var SUPABASE_ANON_KEY='sb_publishable_6hruA5M5rw0UNlTPltvFfQ_dZMrio1I';
   var $=function(id){return document.getElementById(id)};
-  var q=$('q'), total=$('total'), name=$('name'), note=$('note'), roles=$('roles'),
+  var q=$('q'), total=$('total'), name=$('name'), phone=$('phone'), requestedFor=$('requestedFor'), note=$('note'), roles=$('roles'),
       wa1=$('wa1'), wa2=$('wa2'), chips=$('chips'), addr=$('addr'), maps=$('maps'), ref=$('ref');
 
   function money(n){var s=(Math.round(n*100)/100).toFixed(2);return '$'+s.replace(/\.?0+$/,'');}
@@ -384,6 +383,8 @@ footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
     var mode=document.querySelector('input[name=mode]:checked').value;
     var pay=document.querySelector('input[name=pay]:checked').value;
     if(name.value.trim()) t+=' Mi nombre es '+name.value.trim()+'.';
+    if(phone.value.trim()) t+=' Teléfono: '+phone.value.trim()+'.';
+    if(requestedFor.value) t+=' Fecha solicitada: '+requestedFor.value+'.';
     var tops=TOPS.filter(function(n){return cnt[n]>0;}).map(function(n){return cnt[n]+' '+n;}).join(', ');
     if(tops) t+=' Coberturas: '+tops+'.';
     t+=' Entrega: '+mode+'.';
@@ -411,9 +412,35 @@ footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
   }
   $('minus').onclick=function(){if(qty>1){qty--;render();}};
   $('plus').onclick=function(){if(qty<MAX){qty++;render();}};
-  name.addEventListener('input',render);note.addEventListener('input',render);addr.addEventListener('input',render);maps.addEventListener('input',render);ref.addEventListener('input',render);
+  name.addEventListener('input',render);phone.addEventListener('input',render);requestedFor.addEventListener('change',render);note.addEventListener('input',render);addr.addEventListener('input',render);maps.addEventListener('input',render);ref.addEventListener('input',render);
   $('f').addEventListener('change',render);
   $('f').addEventListener('submit',function(e){e.preventDefault();});
+  $('submitOrder').addEventListener('click',async function(){
+    var button=this, feedback=$('orderFeedback');
+    var date=requestedFor.value, parts=date.split('-').map(Number);
+    var chosen=new Date(parts[0],parts[1]-1,parts[2],12), today=new Date();today.setHours(0,0,0,0);
+    if(name.value.trim().length<2||phone.value.replace(/\D/g,'').length<7){feedback.textContent='Escribe tu nombre y un teléfono válido.';return;}
+    if(!date||chosen<today||[0,5,6].indexOf(chosen.getDay())<0){feedback.textContent='Selecciona un viernes, sábado o domingo a partir de hoy.';return;}
+    if(document.querySelector('input[name=mode]:checked').value!=='Retiro'&&!addr.value.trim()){feedback.textContent='Indica la dirección de entrega.';return;}
+    if(sumC()!==qty*3){feedback.textContent='Completa las coberturas de todos los roles.';return;}
+    button.disabled=true;feedback.textContent='Registrando pedido…';
+    var payload={idempotency_key:crypto.randomUUID(),customer_name:name.value.trim(),customer_phone:phone.value.trim(),
+      quantity_packages:qty,toppings:TOPS.reduce(function(o,n){if(cnt[n])o[n]=cnt[n];return o;},{}),
+      fulfillment:document.querySelector('input[name=mode]:checked').value,delivery_address:addr.value.trim(),
+      maps_url:maps.value.trim(),requested_for:date,payment_timing:document.querySelector('input[name=paytiming]:checked').value,
+      payment_reference:ref.value.trim(),customer_note:note.value.trim()};
+    try{
+      var response=await fetch(SUPABASE_URL+'/functions/v1/submit-web-order',{method:'POST',
+        headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY},
+        body:JSON.stringify(payload)});
+      var result=await response.json();if(!response.ok||!result.ok)throw new Error(result.error||'No se pudo registrar el pedido.');
+      feedback.textContent='¡Pedido registrado! Envíalo por WhatsApp para coordinar los detalles.';
+      var target=payload.fulfillment==='Retiro'?N1:N2;
+      window.open('https://wa.me/'+target+'?text='+msg(),'_blank','noopener');
+    }catch(err){feedback.textContent=err.message||'No pudimos registrar el pedido.';}
+    finally{button.disabled=false;}
+  });
+
 
   $('wab').href='https://wa.me/'+N1+'?text='+encodeURIComponent('Hola, quiero cotizar un rol de cumpleaños. Es para el día: ');
   $('wam').href='https://wa.me/'+N1+'?text='+encodeURIComponent('Hola, quiero cotizar roles mini. Cantidad y fecha: ');
