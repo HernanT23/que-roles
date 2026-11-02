@@ -35,9 +35,16 @@ async function getMembership(userId) {
 }
 
 async function loadWorkspace(session) {
-  const membership = await getMembership(session.user.id);
+  let membership = await getMembership(session.user.id);
   if (!membership?.organizations) {
-    throw new Error("No se encontró el espacio de trabajo de esta sesión. Por seguridad, la aplicación no crea organizaciones nuevas desde el navegador. Conserva la sesión original del dispositivo.");
+    const claimCode = window.prompt("Primera conexión de este dispositivo. Introduce el código de activación de propietario que te proporcionamos:");
+    if (!claimCode || !claimCode.trim()) {
+      throw new Error("Este dispositivo aún no está vinculado al negocio. Necesitas el código de activación de propietario.");
+    }
+    const { error: claimError } = await supabase.rpc("claim_owner_access", { p_token: claimCode.trim() });
+    if (claimError) throw new Error("No se pudo vincular este dispositivo: " + claimError.message);
+    membership = await getMembership(session.user.id);
+    if (!membership?.organizations) throw new Error("La vinculación no se pudo verificar. Recarga la página e inténtalo de nuevo.");
   }
   currentOrg = membership.organizations;
   document.getElementById("workspaceName").textContent = currentOrg.name;
