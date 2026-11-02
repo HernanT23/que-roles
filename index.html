@@ -252,7 +252,12 @@ footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
       </div>
       <div class="field">
         <label for="name">Tu nombre</label>
-        <input type="text" id="name" autocomplete="name" placeholder="Ej: María">
+        <input type="text" id="name" autocomplete="name" placeholder="Ej: María" required>
+        <label for="phone">Tu teléfono</label>
+        <input type="text" id="phone" autocomplete="tel" placeholder="0412..." required>
+        <label for="requestedFor">¿Para qué día lo necesitas?</label>
+        <input type="date" id="requestedFor" required>
+        <p class="hint">Atendemos viernes, sábado y domingo.</p>
       </div>
       <div class="field">
         <span class="lbl" id="mlbl">Entrega</span>
@@ -270,7 +275,10 @@ footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
         <a class="maplink" id="mapsopen" href="https://www.google.com/maps" target="_blank" rel="noopener">Abrir Google Maps</a>
       </div>
       <div class="field">
-        <span class="lbl">Método de pago</span>
+        <span class="lbl">¿Cuándo deseas pagar?</span>
+        <div class="seg"><label><input type="radio" name="paytiming" value="advance" checked><span>Pago anticipado</span></label><label><input type="radio" name="paytiming" value="on_delivery"><span>Al retirar / recibir</span></label></div>
+        <span class="hint">El pago anticipado se verifica manualmente antes de marcarlo como recibido.</span>
+        <span class="lbl">Datos para Pago Móvil Provincial</span>
         <div class="paynote">
           <b>Pago móvil</b>
           <dl class="paydata">
