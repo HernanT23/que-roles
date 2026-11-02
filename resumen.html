@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex"><title>Resumen · Que Roles</title>
+<link rel="icon" href="img/logo.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shrikhand&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#FFF8F1;--sf:#fff;--fg:#3A2118;--mu:#7A5F55;--ln:#EBD7CF;--br:#9C4522;--go:#E2A946;--ok:#17794A;--okb:#DDF2E6;--wa:#8A5300;--wab:#FCEBC8;--bd:#B3261E;--bdb:#FADAD6}
+@media(prefers-color-scheme:dark){:root{--bg:#1F110C;--sf:#2E1B14;--fg:#FBEAE2;--mu:#CBAEA2;--ln:#55392E;--br:#8A3C1B;--go:#E9AE62;--ok:#5ED394;--okb:#16402B;--wa:#F2C26B;--wab:#4A3510;--bd:#FF9B90;--bdb:#4F1D19}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 'DM Sans',system-ui,sans-serif;padding:0 16px 40px}
+.w{max-width:680px;margin:0 auto}
+header{background:var(--br);color:#FFF3E4;margin:0 -16px;padding:14px 16px;padding-top:max(14px,env(safe-area-inset-top))}
+header .w{display:flex;align-items:center;gap:10px;font-family:Shrikhand,Georgia,serif;font-size:22px}
+header img{width:38px;height:38px;border-radius:50%;box-shadow:0 0 0 2px var(--go)}
+h1,h2{font-family:Shrikhand,Georgia,serif;font-weight:400;margin:0}
+h1{font-size:30px;margin-top:20px}h2{font-size:22px;color:var(--br);margin:26px 0 10px}
+@media(prefers-color-scheme:dark){h2{color:var(--go)}}
+.mu{color:var(--mu)}.upd{font-size:14px;color:var(--mu);margin:2px 0 0}
+.k{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.c{background:var(--sf);border:1px solid var(--ln);border-radius:18px;padding:14px}
+.c small{display:block;color:var(--mu);font-size:13.5px}.c b{display:block;font:400 28px/1.15 Shrikhand,Georgia,serif;margin-top:2px;font-variant-numeric:tabular-nums}
+.c.m{grid-column:span 2;background:var(--br);border-color:var(--br);color:#FFF3E4}.c.m small{color:#FFF3E4;opacity:.85}.c.m b{color:var(--go);font-size:38px}
+.c span{font-size:13px;color:var(--mu)}
+.l{display:flex;flex-direction:column;gap:10px}
+.r{background:var(--sf);border:1px solid var(--ln);border-radius:16px;padding:12px 14px}
+.r div{display:flex;justify-content:space-between;gap:10px;align-items:baseline}.r b{overflow-wrap:anywhere}.r p{margin:2px 0 0;color:var(--mu);font-size:14.5px}
+.bg{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12.5px;font-weight:700;margin:8px 6px 0 0}
+.ok{background:var(--okb);color:var(--ok)}.wa{background:var(--wab);color:var(--wa)}.bd{background:var(--bdb);color:var(--bd)}
+.e{border:2px dashed var(--ln);border-radius:20px;padding:24px;text-align:center;color:var(--mu)}
+@media(max-width:420px){.c b{font-size:24px}.c.m b{font-size:32px}}
+</style></head><body>
+<header><div class="w"><img src="img/logo.png" alt=""><span>Que Roles</span></div></header>
+<main class="w" id="app"><p class="mu">Cargando…</p></main>
+<script>
+(function(){
+var D=['dom','lun','mar','mié','jue','vie','sáb'],M=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function n(v){v=parseFloat(v);return isFinite(v)?v:0}
+function usd(x){return(x<0?'-':'')+'$'+Math.abs(Math.round(x*100)/100).toFixed(2)}
+function bs(x){var p=Math.abs(x).toFixed(2).split('.');p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,'.');return(x<0?'-':'')+'Bs '+p[0]+','+p[1]}
+function fd(s){if(!s)return'';var d=new Date(s+'T00:00:00');return D[d.getDay()]+' '+d.getDate()+' '+M[d.getMonth()]}
+function ymd(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
+function render(d){
+ var t=ymd(new Date()),mo=t.slice(0,8)+'01',paid={};
+ d.payments.forEach(function(p){paid[p.saleId]=(paid[p.saleId]||0)+n(p.usd)});
+ var act=d.sales.filter(function(s){return s.status!=='anulada'});
+ var sold=0,cnt=0,deb=0;act.forEach(function(s){if(s.date>=mo){sold+=n(s.total)}if(s.date===t)cnt++;deb+=Math.max(0,n(s.total)-(paid[s.id]||0))});
+ var inn=0,out=0,bal={pm:0,usd:0,bs:0};
+ d.payments.forEach(function(p){if(p.date>=mo)inn+=n(p.usd);bal[p.account]+=p.account==='usd'?n(p.usd):n(p.bs)});
+ d.expenses.forEach(function(e){if(e.date>=mo)out+=n(e.usd);bal[e.account]-=e.account==='usd'?n(e.usd):n(e.bs)});
+ var u=new Date(d.updatedAt),upd=isNaN(u)?'':'Actualizado el '+fd(ymd(u))+', '+('0'+u.getHours()).slice(-2)+':'+('0'+u.getMinutes()).slice(-2);
+ var h='<h1>Resumen</h1><p class="upd">'+esc(upd)+'. Es una copia: no se actualiza sola.</p>';
+ if(!d.sales.length)return h+'<div class="e" style="margin-top:14px">Aún no hay ventas registradas.</div>';
+ h+='<div class="k"><div class="c m"><small>Vendido este mes</small><b>'+usd(sold)+'</b><span>'+bs(sold*n(d.rate))+'</span></div>'+
+  '<div class="c"><small>Cobrado este mes</small><b>'+usd(inn)+'</b></div><div class="c"><small>Gastos este mes</small><b>'+usd(out)+'</b></div>'+
+  '<div class="c"><small>Ganancia del mes</small><b>'+usd(inn-out)+'</b></div><div class="c"><small>Por cobrar</small><b>'+usd(deb)+'</b></div></div>';
+ h+='<h2>Saldo en cuentas</h2><div class="k"><div class="c"><small>Pago móvil</small><b style="font-size:22px">'+bs(bal.pm)+'</b></div><div class="c"><small>Efectivo $</small><b style="font-size:22px">'+usd(bal.usd)+'</b></div><div class="c" style="grid-column:span 2"><small>Efectivo Bs</small><b style="font-size:22px">'+bs(bal.bs)+'</b></div></div>';
+ var pend=act.filter(function(s){return!s.delivered}).sort(function(a,b){return String(a.dueDate||a.date).localeCompare(String(b.dueDate||b.date))});
+ h+='<h2>Por entregar</h2>';
+ h+=pend.length?'<div class="l">'+pend.map(function(s){var late=s.dueDate&&s.dueDate<t;return'<div class="r"><div><b>'+esc(s.name)+'</b><span>'+usd(n(s.total))+'</span></div><p>'+esc(s.summary)+'</p><span class="bg '+(late?'bd':'wa')+'">'+(late?'Atrasado · ':'Para ')+fd(s.dueDate)+'</span></div>'}).join('')+'</div>':'<p class="mu">No hay entregas pendientes.</p>';
+ var rec=act.slice().sort(function(a,b){return String(b.date+b.createdAt).localeCompare(String(a.date+a.createdAt))}).slice(0,15);
+ h+='<h2>Últimas ventas</h2><div class="l">'+rec.map(function(s){var b=Math.max(0,n(s.total)-(paid[s.id]||0));return'<div class="r"><div><b>'+esc(s.name)+'</b><span>'+usd(n(s.total))+'</span></div><p>'+esc(s.summary)+' · '+fd(s.date)+'</p><span class="bg '+(b<=0?'ok':'wa')+'">'+(b<=0?'Pagado':'Debe '+usd(b))+'</span>'+(s.delivered?'<span class="bg ok">Entregado</span>':'')+'</div>'}).join('')+'</div>';
+ return h;
+}
+fetch('resumen-data.json',{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){document.getElementById('app').innerHTML=render(d)}).catch(function(){document.getElementById('app').innerHTML='<div class="e">No se pudo cargar el resumen. Intenta de nuevo en un momento.</div>'});
+})();
+</script></body></html>
