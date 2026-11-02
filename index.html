@@ -102,6 +102,7 @@ section.block h2{font-size:clamp(30px,5vw,44px);color:var(--brand)}
 .field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
 .field label,.field .lbl{font-size:15px;font-weight:700;color:var(--fg)}
 .field input[type=text],.field textarea{font:inherit;color:var(--fg);background:var(--bg);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;width:100%;min-width:0}
+.sel{font:inherit;color:var(--fg);background:var(--bg);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;width:100%;min-width:0}
 .field textarea{min-height:76px;resize:vertical}
 .qty{display:flex;align-items:center;gap:14px}
 .qty button{width:48px;height:48px;border-radius:50%;border:2px solid var(--fg);background:transparent;color:var(--fg);font:700 24px var(--body);cursor:pointer;line-height:1}
@@ -255,6 +256,11 @@ footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
         <input type="text" id="name" autocomplete="name" placeholder="Ej: María">
       </div>
       <div class="field">
+        <label for="fecha">Fecha de entrega</label>
+        <select id="fecha" class="sel"></select>
+        <p class="hint">Entregamos de jueves a domingo. Pide con al menos 1 semana de antelación.</p>
+      </div>
+      <div class="field">
         <span class="lbl" id="mlbl">Entrega</span>
         <div class="seg" role="radiogroup" aria-labelledby="mlbl">
           <label><input type="radio" name="mode" value="Retiro" checked><span>Retiro</span></label>
@@ -359,8 +365,8 @@ footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
       plus[n].disabled=s>=need;
       rows[n].classList.toggle('on',cnt[n]>0);
     });
-    var ok=s===need;
-    $('topstat').textContent=ok?'Listo: '+need+(need===1?' cobertura':' coberturas')+'.':'Elige '+(need-s)+' más: son '+need+' en total, una por rol ('+pk(qty)+').';
+    var ok=s===need&&!!$('fecha').value;
+    $('topstat').textContent=ok?'Listo: '+need+(need===1?' cobertura':' coberturas')+'.':(s!==need?'Elige '+(need-s)+' más: son '+need+' en total, una por rol ('+pk(qty)+').':'Elige la fecha de entrega para poder enviar el pedido.');
     [wa1,wa2].forEach(function(a){a.classList.toggle('off',!ok);a.setAttribute('aria-disabled',String(!ok));a.tabIndex=ok?0:-1;});
   }
 
@@ -378,7 +384,7 @@ footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
     if(name.value.trim()) t+=' Mi nombre es '+name.value.trim()+'.';
     var tops=TOPS.filter(function(n){return cnt[n]>0;}).map(function(n){return cnt[n]+' '+n;}).join(', ');
     if(tops) t+=' Coberturas: '+tops+'.';
-    t+=' Entrega: '+mode+'.';
+    t+=' Entrega: '+mode+', el '+$('fecha').selectedOptions[0].text+'.';
     if(mode!=='Retiro' && addr.value.trim()) t+=' Dirección: '+addr.value.trim()+'.';
     if(mode!=='Retiro' && maps.value.trim()) t+=' Ubicación: '+maps.value.trim()+'.';
     t+=' Pago por: '+pay+', monto en Bs: '+fmtNum(qty*PRICE*RATE,2)+' (tasa BCV '+fmtNum(RATE,4)+' del '+RATE_DATE+').';
@@ -423,6 +429,17 @@ footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
   });
   var MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   function fmtDate(s){var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?(+m[3])+' '+MES[+m[2]-1]+' '+m[1]:'';}
+  function buildDates(){
+    var sel=$('fecha'),o=document.createElement('option');o.value='';o.textContent='Elige una fecha';sel.appendChild(o);
+    var DN=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'],ML=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    var c=new Date(Date.now()-4*3600*1000); /* hora de Venezuela (UTC-4) */
+    var base=Date.UTC(c.getUTCFullYear(),c.getUTCMonth(),c.getUTCDate());
+    for(var i=7;i<=42;i++){
+      var d=new Date(base+i*86400000),w=d.getUTCDay();
+      if(w===0||w>=4){var op=document.createElement('option');op.value=d.toISOString().slice(0,10);op.textContent=DN[w]+' '+d.getUTCDate()+' de '+ML[d.getUTCMonth()];sel.appendChild(op);}
+    }
+  }
+  buildDates();
   buildTops();
   render();
   // Tasa oficial: primero el servicio propio (si existe), luego la API publica de dolar oficial.
