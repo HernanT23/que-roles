@@ -34,7 +34,7 @@ export async function mountModules({supabase,organization,notify,refreshDashboar
    supabase.from("web_orders").select("*").eq("organization_id",org).eq("status","pending").order("created_at",{ascending:false}).limit(50)
   ]);
   if(salesResult.error)throw salesResult.error;if(ordersResult.error)throw ordersResult.error;
-  const data=salesResult.data||[], orders=ordersResult.data||[]; const ordersCache=new Map(orders.map(o=>[o.id,o]));
+  const data=salesResult.data||[], orders=ordersResult.data||[];
   let pendingRows=orders.map(o=>`<tr><td>${when(o.created_at)}</td><td><b>${esc(o.customer_name)}</b><br>${esc(o.customer_phone||"—")}</td><td>${o.quantity_packages} paquete(s) · ${esc(JSON.stringify(o.toppings||{}))}</td><td>${esc(o.requested_for)}<br>${esc(o.fulfillment)}${o.delivery_address?" · "+esc(o.delivery_address):""}</td><td>${money(o.total,o.currency)}<br>${o.payment_timing==="advance"?"Anticipado":"Al recibir"}<br><small>${o.payment_reference?"Ref. "+esc(o.payment_reference):"Sin referencia"} · ${o.payment_status==="pending_verification"?"Por verificar":"No pagado"}</small></td><td><button type="button" class="primary" data-confirm-web-order="${o.id}">Confirmar</button> <button type="button" data-reject-web-order="${o.id}">Rechazar</button></td></tr>`).join("");
   let body='<div class="panel module-panel"><h3>Pedidos recibidos desde la página</h3><p class="form-hint">Confirma el pedido cuando revises los datos. Si es anticipado, verifica primero el Pago Móvil y su referencia.</p><div class="table-wrap"><table><thead><tr><th>Recibido</th><th>Cliente</th><th>Pedido</th><th>Fecha / entrega</th><th>Total / pago</th><th>Acción</th></tr></thead><tbody>'+(pendingRows||'<tr><td colspan="6">No hay pedidos web pendientes.</td></tr>')+'</tbody></table></div></div>';
   body+=form("Nueva venta","sale",sel("product_id","Producto",`<option value="">Selecciona</option>${cache.products.map(x=>`<option value="${x.id}" data-price="${x.sale_price}">${esc(x.name)} · ${money(x.sale_price,x.currency)}</option>`).join("")}`)+sel("customer_id","Cliente",`<option value="">Venta directa</option>${cache.customers.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("")}`)+inp("quantity","Cantidad","number",'min="0.001" step="0.001"')+inp("unit_price","Precio unitario","number",'min="0" step="0.01"')+inp("payment_amount","Abono recibido","number",'min="0" step="0.01" value="0"')+sel("payment_method","Método de pago",'<option value="cash">Efectivo</option><option value="pago_movil">Pago móvil</option><option value="transfer">Transferencia</option><option value="card">Tarjeta</option><option value="zelle">Zelle</option><option value="other">Otro</option>')+inp("notes","Notas"),"Guardar venta");
@@ -90,7 +90,9 @@ export async function mountModules({supabase,organization,notify,refreshDashboar
   if(confirmOrder){
     if(!window.confirm("Confirma que revisaste el pedido y, si es anticipado, verificaste el pago en tu banco."))return;
     confirmOrder.disabled=true;
-    const selected=ordersCache.get(confirmOrder.dataset.confirmWebOrder);
+    const selectedResult=await supabase.from("web_orders").select("id,payment_timing,payment_reference").eq("organization_id",org).eq("id",confirmOrder.dataset.confirmWebOrder).maybeSingle();
+    if(selectedResult.error){notify(selectedResult.error.message,true);confirmOrder.disabled=false;return;}
+    const selected=selectedResult.data;
     if(selected?.payment_timing==="advance"&&!selected.payment_reference){
       const ref=window.prompt("Introduce la referencia del Pago Móvil que verificaste:");
       if(!ref||!ref.trim()){confirmOrder.disabled=false;return;}
