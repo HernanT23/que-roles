@@ -6,7 +6,10 @@ export default defineConfig({
     outDir: "dist",
     emptyOutDir: true,
     rollupOptions: {
-      input: "admin/index.html"
+      input: {
+        storefront: "index.html",
+        admin: "admin/index.html"
+      }
     }
   }
 });
