@@ -559,9 +559,9 @@ async function reload(){
       SB.from('org_settings').select('exchange_rate,rate_date,package_price').eq('organization_id',oid).maybeSingle(),
       SB.from('web_orders').select('*').eq('organization_id',oid).eq('status','pending').order('requested_for',{ascending:true}).limit(100)
     ]);
-    for(var i=0;i<5;i++)if(q[i].error)throw q[i].error;
+    for(var i=0;i<4;i++)if(q[i].error)throw q[i].error;
     var d=normData(q);S.cust=d.cust;S.sales=d.sales;S.pays=d.pays;S.exps=d.exps;S.web=q[5].error?[]:(q[5].data||[]);
-    var st=q[4].data;S.set={rate:st?num(st.exchange_rate):0,rateDate:st&&st.rate_date||'',price:st?(num(st.package_price)||5.5):5.5};
+    var st=q[4].error?null:q[4].data;if(st&&num(st.exchange_rate)){S.set={rate:num(st.exchange_rate),rateDate:st.rate_date||'',price:num(st.package_price)||5.5};}else if(!S.set.rate){S.set={rate:0,rateDate:'',price:(st&&num(st.package_price))||5.5};}
     S.loaded={sales:true};S.state='ready';
   }catch(e){if(!S.loaded.sales){S.state='error';}toast('No se pudieron leer los datos: '+errMsg(e),true);}
   reloading=false;renderAll();
@@ -605,12 +605,13 @@ function rejectWeb(id){
 }
 /* tasa del día automática (la misma que usa la página de pedidos) */
 async function autoRate(){
-  if(S.set.rateDate===today())return;
+  if(S.set.rateDate===today()&&S.set.rate)return;
   try{
     var r=await fetch('/api/tasa',{cache:'no-store'}),d=await r.json();
     if(d&&d.rate>1&&d.rate<100000){
+      S.set.rate=d.rate;S.set.rateDate=today();renderAll();
       var u=await SB.from('org_settings').upsert({organization_id:ORG.id,exchange_rate:d.rate,rate_date:today(),package_price:num(S.set.price)||5.5,updated_at:new Date().toISOString()},{onConflict:'organization_id'});
-      if(!u.error)await reload();
+      if(u.error)console.warn('No se pudo guardar la tasa:',u.error.message);
     }
   }catch(e){}
 }
@@ -633,8 +634,8 @@ async function enter(m){
   ORG=m.organizations;S.db=true;
   $('#auth').hidden=true;
   await reload();autoRate();
-  setInterval(function(){if(document.hidden||S.sheet)return;var a=document.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return;reload();},60000);
-  document.addEventListener('visibilitychange',function(){if(!document.hidden&&!S.sheet)reload();});
+  setInterval(function(){if(document.hidden||S.sheet)return;var a=document.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return;reload().then(autoRate);},60000);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden&&!S.sheet)reload().then(autoRate);});
 }
 async function startApp(){
   var url=import.meta.env.VITE_SUPABASE_URL,key=import.meta.env.VITE_SUPABASE_ANON_KEY;
