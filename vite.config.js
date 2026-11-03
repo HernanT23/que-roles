@@ -8,7 +8,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         storefront: "index.html",
-        admin: "admin/index.html"
+        admin: "admin/index.html",
+        avanzado: "admin/avanzado/index.html"
       }
     }
   }
