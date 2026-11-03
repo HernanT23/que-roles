@@ -8,7 +8,7 @@ var CATS=['Ingredientes','Empaques','Transporte','Gas y servicios','Otros'];
 var DOW=['dom','lun','mar','mié','jue','vie','sáb'], MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 var DEF={rate:0,rateDate:'',price:5.5};
 var SB=null,ORG=null,TZ='America/Caracas';
-var S={db:null,web:[],dl:true,state:'loading',set:Object.assign({},DEF),cust:[],sales:[],pays:[],exps:[],loaded:{},tab:'resumen',viewTab:null,fSales:'todas',qSales:'',qCust:'',per:'mes',sheet:null,dl:null};
+var S={db:null,web:[],ing:[],mov:[],qInv:'',dl:true,state:'loading',set:Object.assign({},DEF),cust:[],sales:[],pays:[],exps:[],loaded:{},tab:'resumen',viewTab:null,fSales:'todas',qSales:'',qCust:'',per:'mes',sheet:null,dl:null};
 var F=null;
 
 /* utilidades */
@@ -88,12 +88,12 @@ function loading(){return S.state==='loading'&&!(S.loaded.sales);}
 /* vistas */
 function renderView(){
   var v=$('#view');
-  if(S.tab==='ventas'||S.tab==='clientes'){
+  if(S.tab==='ventas'||S.tab==='clientes'||S.tab==='inventario'){
     if(S.viewTab===S.tab&&$('#lst')){fillList();return;}
   }
   S.viewTab=S.tab;
-  v.innerHTML=banner()+({resumen:viewResumen,ventas:viewVentas,clientes:viewClientes,cuentas:viewCuentas}[S.tab])();
-  if(S.tab==='ventas'||S.tab==='clientes')fillList();
+  v.innerHTML=banner()+({resumen:viewResumen,ventas:viewVentas,clientes:viewClientes,inventario:viewInventario,cuentas:viewCuentas}[S.tab])();
+  if(S.tab==='ventas'||S.tab==='clientes'||S.tab==='inventario')fillList();
 }
 function viewResumen(){
   var c=calc(),t=today(),h='';
@@ -110,6 +110,8 @@ function viewResumen(){
   h+='<div class="kpis" style="margin-top:12px"><div class="kpi main"><small>Vendido hoy ('+cnt+(cnt===1?' venta':' ventas')+')</small><b>'+usd(sold)+'</b><span>'+bs(sold*rate())+'</span></div>'+
      '<div class="kpi"><small>Cobrado hoy</small><b>'+usd(col)+'</b></div><div class="kpi"><small>Gastos hoy</small><b>'+usd(gas)+'</b></div>'+
      '<div class="kpi" style="grid-column:span 2"><small>Por cobrar en total</small><b>'+usd(porCobrar)+'</b><span>'+(porCobrar>0?'Pagos pendientes de clientes':'Todo cobrado')+'</span></div></div>';
+  var lowI=S.ing.filter(isLow);
+  if(lowI.length)h+='<div class="banner alert" style="margin-top:12px"><b>Por reponer:</b> '+lowI.slice(0,6).map(function(i){return esc(i.name);}).join(', ')+(lowI.length>6?' y '+(lowI.length-6)+' más':'')+'. <button class="btn sm gold" type="button" data-act="tab" data-t="inventario">Ver inventario</button></div>';
   /* por entregar y produccion */
   var pend=c.act.filter(function(s){return !s.delivered;}).sort(function(a,b){return String(a.dueDate||a.date).localeCompare(String(b.dueDate||b.date));});
   h+='<div class="sec"><h2>Por entregar</h2>';
@@ -126,7 +128,7 @@ function viewResumen(){
   var days=[];for(var i=6;i>=0;i--)days.push(addDays(t,-i));
   var vals=days.map(function(d){return r2(c.act.reduce(function(a,s){return a+(s.date===d?num(s.totalUSD):0);},0));});
   h+='<div class="sec"><h2>Ventas de los últimos 7 días</h2><div class="card">'+chart(days,vals,t)+'</div></div>';
-  h+='<p class="muted" style="margin-top:22px"><a href="/admin/avanzado/">Inventario y producción</a></p>';
+  h+='<p class="muted" style="margin-top:22px"><a href="/admin/avanzado/">Recetas y producción</a></p>';
   return h;
 }
 function chart(days,vals,t){
@@ -165,7 +167,7 @@ function fillList(){
       if(S.fSales==='cobrar')return s.status!=='anulada'&&bal(s,c)>0;
       return true;});
     el.innerHTML=l.length?l.map(function(s){return saleRow(s,c);}).join(''):(S.sales.length?'<div class="empty"><p style="margin:0">No hay ventas con ese filtro.</p></div>':'<div class="empty"><h3>Sin ventas todavía</h3><p>Cuando registres una venta aparecerá aquí con su estado de pago y de entrega.</p><button class="btn gold" data-act="newsale" type="button">Registrar venta</button></div>');
-  }else{
+  }else if(S.tab==='clientes'){
     var q2=S.qCust.trim().toLowerCase().replace(/\s+/g,' ');
     var rows=S.cust.map(function(cu){
       var ss=c.act.filter(function(s){return s.customerId===cu.id;}),tot=0,deb=0;
@@ -176,7 +178,7 @@ function fillList(){
     el.innerHTML=rows.length?rows.map(function(r){
       return '<button type="button" class="row" data-act="cust" data-id="'+esc(r.cu.id)+'"><div class="r1"><b>'+esc(r.cu.name)+'</b><span class="amt">'+usd(r.tot)+'</span></div><div class="r2">'+esc(r.cu.phone||'Sin teléfono')+'</div><div class="r3"><span class="badge b-mute">'+r.n+(r.n===1?' compra':' compras')+'</span>'+(r.deb>0?'<span class="badge b-warn">Debe '+usd(r.deb)+'</span>':'')+'</div></button>';}).join(''):
       (S.cust.length?'<div class="empty"><p style="margin:0">Ningún cliente coincide.</p></div>':'<div class="empty"><h3>Sin clientes todavía</h3><p>Los clientes se guardan solos al registrar una venta. También puedes agregarlos a mano.</p><button class="btn gold" data-act="newcust" type="button">Agregar cliente</button></div>');
-  }
+  }else if(S.tab==='inventario'){fillInv(el);}
 }
 function movs(){
   var from=perStart(),m=[];
@@ -491,6 +493,14 @@ var ACT={
   'void-no':function(){S.sheet.confirmVoid=null;refreshSheet();},
   'void-yes':async function(t){if(!guard())return;S.sheet.confirmVoid=null;await patchSale(t.dataset.id,{status:'canceled'},'Venta anulada');},
   restore:async function(t){if(!guard())return;await patchSale(t.dataset.id,{status:'confirmed'},'Venta reactivada');},
+  ing:function(t){openIng(t.dataset.id);},
+  newing:function(){if(guard())openIngForm(null);},
+  edding:function(t){var id=t.dataset.id;closeSheet();openIngForm(id);},
+  saveing:saveIng,
+  mvstart:function(t){var id=t.dataset.id;closeSheet();openMove(id,t.dataset.k);},
+  mvsign:function(t){F.sign=+t.dataset.v;F.redraw();},
+  mvacc:function(t){F.acc=t.dataset.v;F.redraw();},
+  savemove:saveMove,
   webok:function(t){confirmWeb(t.dataset.id);},
   webno:function(t){rejectWeb(t.dataset.id);},
   webref:async function(t){var v=($('#wref')||{}).value||'';if(!v.trim()){toast('Escribe la referencia.',true);return;}await confirmWeb(t.dataset.id,v.trim());},
@@ -519,8 +529,120 @@ document.addEventListener('input',function(e){
   var t=e.target;
   if(t.id==='qs'){S.qSales=t.value;fillList();}
   if(t.id==='qc'){S.qCust=t.value;fillList();}
+  if(t.id==='qi'){S.qInv=t.value;fillList();}
 });
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&S.sheet)closeSheet();});
+
+
+/* inventario de ingredientes */
+var MVL={purchase:'Entrada',production_input:'Uso',waste:'Merma',adjustment:'Ajuste',production_output:'Producción',sale:'Venta',reversal:'Reverso'};
+function isLow(i){return num(i.min_quantity)>0&&num(i.current_quantity)<=num(i.min_quantity);}
+function fq(q,u){q=num(q);var a=Math.abs(q);
+  function f(x){return fmtN(x,Math.round(x*100)%100?2:0);}
+  if(u==='g'&&a>=1000)return f(q/1000)+' kg';
+  if(u==='ml'&&a>=1000)return f(q/1000)+' L';
+  return f(q)+(u==='g'?' g':u==='ml'?' ml':(a===1?' und':' und'));}
+function unitOpts(u){return u==='g'?[['g',1],['kg',1000]]:(u==='ml'?[['ml',1],['L',1000]]:[['und',1]]);}
+function costTxt(i){var c=num(i.average_unit_cost);if(!c)return 'sin costo';
+  var cur=i.currency==='VES'?'Bs ':'$';
+  if(i.base_unit==='g')return cur+fmtN(c*1000,2)+' / kg';
+  if(i.base_unit==='ml')return cur+fmtN(c*1000,2)+' / L';
+  return cur+fmtN(c,2)+' / und';}
+function viewInventario(){
+  return '<div class="pagehd"><h1>Inventario</h1><button class="btn gold sm" data-act="newing" type="button">Nuevo ingrediente</button></div>'+
+   '<input class="search" id="qi" type="search" placeholder="Buscar ingrediente" value="'+esc(S.qInv)+'" style="margin-top:12px" aria-label="Buscar ingrediente"><div class="list" id="lst" style="margin-top:12px"></div>'+
+   '<p class="muted" style="margin-top:22px"><a href="/admin/avanzado/">Recetas y producción</a></p>';
+}
+function fillInv(el){
+  if(loading()){el.innerHTML='<p class="muted">Cargando tus datos…</p>';return;}
+  var q=S.qInv.trim().toLowerCase();
+  var l=S.ing.filter(function(i){return !q||String(i.name||'').toLowerCase().indexOf(q)>=0;}).sort(function(a,b){return (isLow(b)-isLow(a))||String(a.name).localeCompare(String(b.name));});
+  var low=S.ing.filter(isLow).length;
+  el.innerHTML=(low&&!q?'<div class="banner alert" style="margin-bottom:0">'+low+(low===1?' ingrediente por reponer.':' ingredientes por reponer.')+'</div>':'')+
+   (l.length?l.map(function(i){
+     var zero=num(i.current_quantity)<=0;
+     return '<button type="button" class="row" data-act="ing" data-id="'+esc(i.id)+'"><div class="r1"><b>'+esc(i.name)+'</b><span class="amt">'+fq(i.current_quantity,i.base_unit)+'</span></div>'+
+      '<div class="r3">'+(zero?'<span class="badge b-bad">Agotado</span>':(isLow(i)?'<span class="badge b-warn">Por reponer</span>':'<span class="badge b-ok">Bien</span>'))+(num(i.min_quantity)>0?'<span class="badge b-mute">Mínimo '+fq(i.min_quantity,i.base_unit)+'</span>':'')+'<span class="bsx">'+costTxt(i)+'</span></div></button>';}).join(''):
+   (S.ing.length?'<div class="empty"><p style="margin:0">Ningún ingrediente coincide.</p></div>':'<div class="empty"><h3>Sin ingredientes todavía</h3><p>Agrega harina, queso crema, azúcar y lo demás para controlar cuánto tienes y cuándo reponer.</p><button class="btn gold" data-act="newing" type="button">Agregar ingrediente</button></div>'));
+}
+function openIng(id){
+  openSheet({title:'Ingrediente',live:true,html:function(){
+    var i=S.ing.filter(function(x){return x.id===id;})[0];if(!i)return '<p class="muted">Este ingrediente ya no existe.</p>';
+    var hist=S.mov.filter(function(m){return m.ingredient_id===id;}).slice(0,15);
+    return '<h3 style="font-size:24px;margin-bottom:8px">'+esc(i.name)+'</h3>'+
+     '<dl class="dl"><dt>Existencia</dt><dd><b>'+fq(i.current_quantity,i.base_unit)+'</b>'+(isLow(i)?' <span class="badge b-warn">Por reponer</span>':'')+'</dd><dt>Mínimo</dt><dd>'+(num(i.min_quantity)>0?fq(i.min_quantity,i.base_unit):'Sin definir')+'</dd><dt>Costo promedio</dt><dd>'+costTxt(i)+'</dd></dl>'+
+     '<div class="acts"><button class="btn gold" data-act="mvstart" data-k="purchase" data-id="'+esc(id)+'" type="button">Entrada</button><button class="btn pri" data-act="mvstart" data-k="production_input" data-id="'+esc(id)+'" type="button">Usar</button><button class="btn line" data-act="mvstart" data-k="waste" data-id="'+esc(id)+'" type="button">Merma</button><button class="btn line" data-act="mvstart" data-k="adjustment" data-id="'+esc(id)+'" type="button">Ajustar</button><button class="btn line sm" data-act="edding" data-id="'+esc(id)+'" type="button">Editar</button></div>'+
+     '<h3 style="font-size:20px;margin:14px 0 8px">Movimientos</h3>'+(hist.length?'<div class="list">'+hist.map(function(m){var d=num(m.quantity_delta);return '<div class="mv"><span class="ic '+(d>0?'in':'out')+'" aria-hidden="true">'+(d>0?'+':'−')+'</span><span><span class="t">'+(MVL[m.movement_type]||m.movement_type)+'</span><br><span class="s">'+fDay(dayOf(new Date(m.created_at)))+(m.note?' · '+esc(m.note):'')+'</span></span><span class="a">'+(d>0?'+':'−')+fq(Math.abs(d),i.base_unit)+'</span></div>';}).join('')+'</div>':'<p class="muted" style="margin:0">Todavía no hay movimientos.</p>');
+  }});
+}
+function openIngForm(id){
+  var i=id?S.ing.filter(function(x){return x.id===id;})[0]:null;
+  F={kind:'ing',id:id||null,saving:false};
+  openSheet({title:i?'Editar ingrediente':'Nuevo ingrediente',focus:true,html:function(){
+    return '<div class="f"><label for="in_n">Nombre</label><input class="inp" id="in_n" autocomplete="off" placeholder="Ej: Harina de trigo" value="'+esc(i?i.name:'')+'"></div>'+
+     (i?'':'<div class="f"><label for="in_u">Se mide en</label><select id="in_u"><option value="g">Gramos / kilos</option><option value="ml">Mililitros / litros</option><option value="unit">Unidades</option></select></div>'+
+     '<div class="two"><div class="f" style="margin:0"><label for="in_q">Cantidad que tienes</label><input class="inp" id="in_q" inputmode="decimal" placeholder="0"></div><div class="f" style="margin:0"><label for="in_t">Costo total $ (opcional)</label><input class="inp" id="in_t" inputmode="decimal" placeholder="0"></div></div><p class="hint" style="margin-bottom:14px">La cantidad va en gramos, mililitros o unidades. Para kilos escribe, por ejemplo, 5000.</p>')+
+     '<div class="f"><label for="in_m">Avisarme cuando baje de (opcional)</label><input class="inp" id="in_m" inputmode="decimal" placeholder="0" value="'+(i&&num(i.min_quantity)?esc(String(num(i.min_quantity))):'')+'"><p class="hint">En la misma medida: gramos, mililitros o unidades.</p></div>'+
+     '<div class="acts"><button class="btn gold" id="ingsave" type="button" data-act="saveing">Guardar ingrediente</button></div>';}});
+}
+async function saveIng(){
+  if(!guard()||F.saving)return;
+  var n=$('#in_n').value.trim(),mn=num($('#in_m').value);
+  if(!n){toast('Escribe el nombre.',true);return;}
+  F.saving=true;$('#ingsave').disabled=true;
+  try{
+    if(F.id){var u=await SB.from('ingredients').update({name:n,min_quantity:mn}).eq('organization_id',ORG.id).eq('id',F.id);if(u.error)throw u.error;await reload();var id=F.id;closeSheet();toast('Ingrediente actualizado');openIng(id);return;}
+    var unit=$('#in_u').value,q=num($('#in_q').value),t=num($('#in_t').value);
+    var ins=await SB.from('ingredients').insert({organization_id:ORG.id,name:n,base_unit:unit,current_quantity:0,average_unit_cost:0,currency:'USD',min_quantity:mn}).select('id').single();
+    if(ins.error)throw ins.error;
+    if(q>0){var r=await SB.rpc('adjust_ingredient',{p_organization_id:ORG.id,p_ingredient_id:ins.data.id,p_delta:q,p_total_cost_usd:t>0?t:0,p_movement_type:'purchase',p_note:'Existencia inicial'});if(r.error)throw r.error;}
+    await reload();closeSheet();toast('Ingrediente guardado');
+  }catch(e){F.saving=false;var b=$('#ingsave');if(b)b.disabled=false;toast('No se pudo guardar: '+errMsg(e),true);}
+}
+function openMove(id,type){
+  var i=S.ing.filter(function(x){return x.id===id;})[0];if(!i)return;
+  var ttl={purchase:'Entrada de '+i.name,production_input:'Usar '+i.name,waste:'Merma de '+i.name,adjustment:'Ajustar '+i.name}[type];
+  F={kind:'move',id:id,type:type,sign:1,qty:0,mult:1,total:0,acc:'',note:'',saving:false,unit:i.base_unit};
+  openSheet({title:'Movimiento',focus:true,html:function(){
+    return '<p class="muted" style="margin-top:0"><b>'+esc(ttl)+'</b>. Ahora hay '+fq(i.current_quantity,i.base_unit)+'.</p><div id="mvbody"></div>';},
+   init:function(){
+    F.redraw=function(){
+      var uo=unitOpts(i.base_unit);
+      $('#mvbody').innerHTML=
+       (type==='adjustment'?'<div class="f"><span class="lbl">¿Sumar o restar?</span><div class="seg"><button type="button" data-act="mvsign" data-v="1" aria-pressed="'+(F.sign===1)+'">Sumar</button><button type="button" data-act="mvsign" data-v="-1" aria-pressed="'+(F.sign===-1)+'">Restar</button></div></div>':'')+
+       '<div class="two"><div class="f" style="margin:0"><label for="mq">Cantidad</label><input class="inp" id="mq" inputmode="decimal" value="'+(F.qty||'')+'"></div><div class="f" style="margin:0"><label for="mu2">Medida</label><select id="mu2">'+uo.map(function(o){return '<option value="'+o[1]+'"'+(F.mult===o[1]?' selected':'')+'>'+o[0]+'</option>';}).join('')+'</select></div></div>'+
+       (type==='purchase'?'<div class="f" style="margin-top:14px"><label for="mt">Total pagado $ (opcional)</label><input class="inp" id="mt" inputmode="decimal" value="'+(F.total||'')+'"><p class="hint">Sirve para calcular el costo promedio.</p></div>'+
+         '<div class="f"><span class="lbl">¿Registrar como gasto?</span><div class="seg"><button type="button" data-act="mvacc" data-v="" aria-pressed="'+(F.acc==='')+'">No</button>'+ACC.map(function(a){return '<button type="button" data-act="mvacc" data-v="'+a.id+'" aria-pressed="'+(F.acc===a.id)+'">'+esc(a.name)+'</button>';}).join('')+'</div><p class="hint">Si lo marcas, el gasto aparece en Cuentas y descuenta de esa cuenta.</p></div>':'')+
+       '<div class="f" style="margin-top:14px"><label for="mn">Nota (opcional)</label><input class="inp" id="mn" autocomplete="off" value="'+esc(F.note)+'"></div>'+
+       '<div class="acts"><button class="btn gold" id="mvsave" type="button" data-act="savemove">Guardar</button></div>';
+      $('#mq').addEventListener('input',function(){F.qty=this.value;});
+      $('#mu2').addEventListener('change',function(){F.mult=+this.value;});
+      var mt=$('#mt');if(mt)mt.addEventListener('input',function(){F.total=this.value;});
+      $('#mn').addEventListener('input',function(){F.note=this.value;});
+    };
+    F.redraw();}});
+}
+async function saveMove(){
+  if(!guard()||F.saving)return;
+  var i=S.ing.filter(function(x){return x.id===F.id;})[0];if(!i)return;
+  var q=num(F.qty)*F.mult;
+  if(q<=0){toast('Escribe la cantidad.',true);return;}
+  var delta=F.type==='purchase'?q:(F.type==='adjustment'?F.sign*q:-q),tot=F.type==='purchase'?num(F.total):0;
+  if(delta<0&&q>num(i.current_quantity)){toast('No hay tanto: solo tienes '+fq(i.current_quantity,i.base_unit)+'.',true);return;}
+  if(F.type==='purchase'&&F.acc&&tot<=0){toast('Para registrar el gasto escribe el total pagado.',true);return;}
+  if(F.type==='purchase'&&F.acc&&acc(F.acc).cur==='Bs'&&!rate()){toast('Primero necesito la tasa del día.',true);return;}
+  F.saving=true;$('#mvsave').disabled=true;
+  try{
+    var r=await SB.rpc('adjust_ingredient',{p_organization_id:ORG.id,p_ingredient_id:F.id,p_delta:delta,p_total_cost_usd:tot,p_movement_type:F.type,p_note:F.note.trim()});
+    if(r.error)throw r.error;
+    var warn='';
+    if(F.type==='purchase'&&F.acc&&tot>0){
+      var e=await SB.rpc('add_expense',{p_organization_id:ORG.id,p_description:'Compra: '+i.name,p_category:'Ingredientes',p_account:F.acc,p_amount_usd:tot,p_amount_native:0,p_rate:rate(),p_paid_at:new Date().toISOString()});
+      if(e.error)warn=' La entrada se guardó, pero el gasto no: '+errMsg(e.error);
+    }
+    var id=F.id;await reload();closeSheet();toast(warn?('Guardado.'+warn):'Movimiento guardado',!!warn);openIng(id);
+  }catch(e){F.saving=false;var b=$('#mvsave');if(b)b.disabled=false;toast('No se pudo guardar: '+errMsg(e),true);}
+}
 
 /* datos reales (Supabase) */
 function nObj(o){return o&&typeof o==='object'?o:{};}
@@ -557,10 +679,12 @@ async function reload(){
       SB.from('payments').select('id,sale_id,received_at,amount,currency,reference,status,account,amount_usd,exchange_rate,method').eq('organization_id',oid).eq('status','confirmed').order('received_at',{ascending:false}).limit(L),
       SB.from('expenses').select('id,description,category,amount,currency,paid_at,account,amount_usd,exchange_rate').eq('organization_id',oid).order('paid_at',{ascending:false}).limit(L),
       SB.from('org_settings').select('exchange_rate,rate_date,package_price').eq('organization_id',oid).maybeSingle(),
-      SB.from('web_orders').select('*').eq('organization_id',oid).eq('status','pending').order('requested_for',{ascending:true}).limit(100)
+      SB.from('web_orders').select('*').eq('organization_id',oid).eq('status','pending').order('requested_for',{ascending:true}).limit(100),
+      SB.from('ingredients').select('id,name,base_unit,current_quantity,average_unit_cost,currency,min_quantity').eq('organization_id',oid).order('name').limit(L),
+      SB.from('stock_movements').select('id,ingredient_id,movement_type,quantity_delta,unit,unit_cost,note,created_at').eq('organization_id',oid).not('ingredient_id','is',null).order('created_at',{ascending:false}).limit(1000)
     ]);
     for(var i=0;i<4;i++)if(q[i].error)throw q[i].error;
-    var d=normData(q);S.cust=d.cust;S.sales=d.sales;S.pays=d.pays;S.exps=d.exps;S.web=q[5].error?[]:(q[5].data||[]);
+    var d=normData(q);S.cust=d.cust;S.sales=d.sales;S.pays=d.pays;S.exps=d.exps;S.web=q[5].error?[]:(q[5].data||[]);S.ing=q[6].error?[]:(q[6].data||[]);S.mov=q[7].error?[]:(q[7].data||[]);
     var st=q[4].error?null:q[4].data;if(st&&num(st.exchange_rate)){S.set={rate:num(st.exchange_rate),rateDate:st.rate_date||'',price:num(st.package_price)||5.5};}else if(!S.set.rate){S.set={rate:0,rateDate:'',price:(st&&num(st.package_price))||5.5};}
     S.loaded={sales:true};S.state='ready';
   }catch(e){if(!S.loaded.sales){S.state='error';}toast('No se pudieron leer los datos: '+errMsg(e),true);}
