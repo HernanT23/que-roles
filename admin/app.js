@@ -7,7 +7,7 @@ var ACC=[{id:'pm',name:'Pago móvil',cur:'Bs'},{id:'usd',name:'Efectivo $',cur:'
 var CATS=['Ingredientes','Empaques','Transporte','Gas y servicios','Otros'];
 var DOW=['dom','lun','mar','mié','jue','vie','sáb'], MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 var DEF={rate:0,rateDate:'',price:5.5};
-var SB=null,ORG=null,TZ='America/Caracas';
+var SB=null,ORG=null,ROLE='',TZ='America/Caracas';
 var S={db:null,web:[],ing:[],mov:[],qInv:'',dl:true,state:'loading',set:Object.assign({},DEF),cust:[],sales:[],pays:[],exps:[],loaded:{},tab:'resumen',viewTab:null,fSales:'todas',qSales:'',qCust:'',per:'mes',sheet:null,dl:null};
 var F=null;
 
@@ -203,6 +203,7 @@ function viewCuentas(){
   else h+='<div class="list">'+m.slice(0,80).map(function(x){return '<button type="button" class="mv" data-act="mov" data-k="'+x.k+'" data-id="'+esc(x.id)+'"><span class="ic '+(x.k==='in'?'in':'out')+'" aria-hidden="true">'+(x.k==='in'?'+':'−')+'</span><span><span class="t">'+esc(x.title)+'</span><br><span class="s">'+esc(x.sub)+' · '+fDay(x.date)+'</span></span><span class="a">'+(x.k==='in'?'+':'−')+usd(x.a)+(x.cur==='Bs'?'<small>'+bs(x.bs)+'</small>':'')+'</span></button>';}).join('')+'</div>'+(m.length>80?'<p class="muted">Se muestran los 80 más recientes.</p>':'');
   h+='</div>';
   if(S.dl)h+='<div class="sec"><h2>Descargar</h2><div class="acts"><button class="btn line sm" data-act="csv" data-w="ventas" type="button">Ventas (CSV)</button><button class="btn line sm" data-act="csv" data-w="mov" type="button">Movimientos (CSV)</button></div><p class="hint">Abre los archivos en Excel o Google Sheets.</p></div>';
+  h+='<div class="sec"><h2>Cuenta</h2><div class="acts">'+((ROLE==='owner'||ROLE==='admin')?'<button class="btn line sm" data-act="team" type="button">Equipo y accesos</button>':'')+'<button class="btn line sm" data-act="logout" type="button">Cerrar sesión</button></div></div>';
   return h;
 }
 
@@ -501,6 +502,10 @@ var ACT={
   mvsign:function(t){F.sign=+t.dataset.v;F.redraw();},
   mvacc:function(t){F.acc=t.dataset.v;F.redraw();},
   savemove:saveMove,
+  team:function(){openTeam();},
+  mkinvite:mkInvite,
+  copycode:function(t){try{navigator.clipboard.writeText(t.dataset.v).then(function(){toast('Código copiado');});}catch(e){}},
+  logout:async function(){try{await SB.auth.signOut();}catch(e){}location.reload();},
   webok:function(t){confirmWeb(t.dataset.id);},
   webno:function(t){rejectWeb(t.dataset.id);},
   webref:async function(t){var v=($('#wref')||{}).value||'';if(!v.trim()){toast('Escribe la referencia.',true);return;}await confirmWeb(t.dataset.id,v.trim());},
@@ -746,16 +751,61 @@ async function getMembership(uid){
   var r=await SB.from('organization_memberships').select('organization_id, role, organizations(id,name,slug,timezone)').eq('user_id',uid).limit(1).maybeSingle();
   if(r.error)throw r.error;return r.data;
 }
-function askClaim(){
-  return new Promise(function(resolve){
-    authShow('Primera conexión','Introduce el código de activación de propietario para vincular este dispositivo.');
-    var f=$('#authForm');
-    f.innerHTML='<form><input class="inp" id="claim" type="password" autocomplete="off" placeholder="Código de activación" aria-label="Código de activación"><button class="btn gold" type="submit">Vincular</button></form>';
-    f.querySelector('form').addEventListener('submit',function(e){e.preventDefault();var v=$('#claim').value.trim();if(v){f.innerHTML='';resolve(v);}});
+function loginId(raw){
+  var s=String(raw||'').trim().toLowerCase().replace(/\s+/g,''),d=s.replace(/\./g,''),m=/^([ve])?-?(\d{5,10})$/.exec(d);
+  if(m)return (m[1]||'v')+m[2];
+  return /^[a-z][a-z0-9._-]{2,29}$/.test(s)?s:'';
+}
+function loginEmail(id){return id+'@que-roles.vercel.app';}
+function authForm(mode,extra){
+  var f=$('#authForm'),su=mode==='signup';
+  authShow(su?'Crear mi usuario':'Entrar','Con tu cédula (V12345678) o tu nombre de usuario.',extra||'');
+  f.innerHTML='<form autocomplete="on"><input class="inp" id="au" autocomplete="username" autocapitalize="none" placeholder="Cédula o usuario" aria-label="Cédula o usuario"><input class="inp" id="ap" type="password" autocomplete="'+(su?'new-password':'current-password')+'" placeholder="Contraseña" aria-label="Contraseña">'+
+   (su?'<input class="inp" id="ap2" type="password" autocomplete="new-password" placeholder="Repite la contraseña" aria-label="Repite la contraseña">':'')+
+   '<button class="btn gold" type="submit">'+(su?'Crear usuario':'Entrar')+'</button><button class="btn line sm" type="button" id="aswitch">'+(su?'Ya tengo usuario':'Crear mi usuario')+'</button></form>';
+  $('#aswitch').addEventListener('click',function(){authForm(su?'login':'signup');});
+  f.querySelector('form').addEventListener('submit',function(e){e.preventDefault();doAuth(su);});
+  $('#au').focus();
+}
+async function doAuth(su){
+  var id=loginId($('#au').value),pw=$('#ap').value,msg=$('#authMsg'),btn=document.querySelector('#authForm button[type=submit]');
+  msg.textContent='';
+  if(!id){msg.textContent='Escribe tu cédula (ej. V12345678) o un usuario de 3 a 30 letras o números.';return;}
+  if(su&&pw.length<8){msg.textContent='La contraseña debe tener al menos 8 caracteres.';return;}
+  if(su&&pw!==$('#ap2').value){msg.textContent='Las contraseñas no coinciden.';return;}
+  if(!su&&!pw){msg.textContent='Escribe tu contraseña.';return;}
+  btn.disabled=true;
+  try{
+    var r=su?await SB.auth.signUp({email:loginEmail(id),password:pw}):await SB.auth.signInWithPassword({email:loginEmail(id),password:pw});
+    if(r.error){
+      var t=r.error.message||'';
+      if(/already registered|already been registered/i.test(t))throw new Error('Ese usuario ya existe. Toca "Ya tengo usuario".');
+      if(/invalid login/i.test(t))throw new Error('Usuario o contraseña incorrectos.');
+      if(/confirm|not confirmed/i.test(t))throw new Error('Falta apagar "Confirm email" en Supabase (Authentication → Sign In / Providers → Email).');
+      throw r.error;
+    }
+    if(!r.data.session)throw new Error('Falta apagar "Confirm email" en Supabase (Authentication → Sign In / Providers → Email).');
+    await afterSession(r.data.session);
+  }catch(e){msg.textContent=errMsg(e);btn.disabled=false;}
+}
+async function afterSession(ses){
+  var m=await getMembership(ses.user.id);
+  if(m&&m.organizations){await enter(m);return;}
+  showInvite(ses);
+}
+function showInvite(ses){
+  authShow('Falta tu acceso','Tu usuario existe, pero aún no está en ningún negocio. Escribe el código de invitación que te dio el dueño.');
+  var f=$('#authForm');
+  f.innerHTML='<form><input class="inp" id="ac" autocomplete="off" autocapitalize="characters" placeholder="Código de invitación" aria-label="Código de invitación"><button class="btn gold" type="submit">Unirme</button><button class="btn line sm" type="button" id="aout">Salir</button></form>';
+  $('#aout').addEventListener('click',async function(){await SB.auth.signOut();authForm('login');});
+  f.querySelector('form').addEventListener('submit',async function(e){
+    e.preventDefault();var v=$('#ac').value.trim().toUpperCase();if(!v)return;
+    try{var r=await SB.rpc('redeem_invite',{p_code:v});if(r.error)throw r.error;await afterSession(ses);}
+    catch(er){$('#authMsg').textContent=errMsg(er);}
   });
 }
 async function enter(m){
-  ORG=m.organizations;S.db=true;
+  ORG=m.organizations;ROLE=m.role;S.db=true;
   $('#auth').hidden=true;
   await reload();autoRate();
   setInterval(function(){if(document.hidden||S.sheet)return;var a=document.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return;reload().then(autoRate);},60000);
@@ -768,27 +818,32 @@ async function startApp(){
   try{
     var ex=await SB.auth.getSession();if(ex.error)throw ex.error;
     var ses=ex.data.session;
-    if(!ses){
-      var an=await SB.auth.signInAnonymously();
-      if(an.error){if(/anonymous|disabled|not enabled/i.test(an.error.message||''))throw new Error('Falta activar el acceso anónimo en Supabase (Authentication → Sign In / Providers → Anonymous Sign-Ins).');throw an.error;}
-      ses=an.data.session;
+    if(ses){
+      var m=await getMembership(ses.user.id);
+      if(m&&m.organizations){await enter(m);return;}
+      if(ses.user.is_anonymous){await SB.auth.signOut();}else{showInvite(ses);return;}
     }
-    if(!ses)throw new Error('Supabase no devolvió una sesión válida.');
-    var m=await getMembership(ses.user.id);
-    if(!m||!m.organizations){
-      var code=await askClaim();
-      authShow('Vinculando…','Un momento.');
-      var c=await SB.rpc('claim_owner_access',{p_token:code});
-      if(c.error)throw new Error('No se pudo vincular este dispositivo: '+c.error.message);
-      m=await getMembership(ses.user.id);
-      if(!m||!m.organizations)throw new Error('La vinculación no se pudo verificar. Recarga e inténtalo de nuevo.');
-    }
-    await enter(m);
+    authForm('login');
   }catch(e){
     authShow('No se pudo abrir Que Roles','Revisa la conexión e inténtalo nuevamente.',errMsg(e));
     $('#authForm').innerHTML='<form><button class="btn pri" type="submit">Reintentar</button></form>';
     $('#authForm form').addEventListener('submit',function(ev){ev.preventDefault();location.reload();});
   }
+}
+/* equipo y sesión */
+var ROLEL={admin:'Administrador/a',manager:'Encargado/a',cashier:'Cajero/a',production:'Producción'};
+function openTeam(){
+  openSheet({title:'Equipo y accesos',html:function(){
+    return '<p class="muted" style="margin-top:0">Crea un código para que otra persona entre a este negocio. Sirve una sola vez y vence en 7 días. Esa persona abre la app, toca "Crear mi usuario" y luego escribe el código.</p>'+
+     '<div class="f"><label for="tr">Puede</label><select id="tr"><option value="cashier">Cajero/a: ventas, clientes y cobros</option><option value="manager">Encargado/a: también inventario y reportes</option><option value="admin">Administrador/a: casi todo</option></select></div>'+
+     '<div class="acts"><button class="btn gold" id="tgo" type="button" data-act="mkinvite">Crear código</button></div><div id="tout"></div>';}});
+}
+async function mkInvite(){
+  if(!guard())return;var b=$('#tgo');b.disabled=true;
+  try{var r=await SB.rpc('create_invite',{p_organization_id:ORG.id,p_role:$('#tr').value});if(r.error)throw r.error;
+    $('#tout').innerHTML='<div class="card" style="text-align:center"><small class="muted">Código para '+esc(ROLEL[$('#tr').value]||'')+'</small><div style="font:400 34px Shrikhand,Georgia,serif;letter-spacing:.06em;margin:6px 0">'+esc(r.data)+'</div><button class="btn line sm" type="button" data-act="copycode" data-v="'+esc(r.data)+'">Copiar</button></div>';}
+  catch(e){toast('No se pudo crear: '+errMsg(e),true);}
+  b.disabled=false;
 }
 renderAll();
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('/admin/sw.js').catch(function(){});
