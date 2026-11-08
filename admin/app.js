@@ -104,6 +104,7 @@ function viewResumen(){
   S.pays.forEach(function(p){if(p.date===t)col+=num(p.amountUSD);});
   S.exps.forEach(function(e){if(e.date===t)gas+=num(e.amountUSD);});
   h+='<div class="pagehd"><h1>Hoy</h1><span class="muted">'+fDay(t)+'</span></div>';
+  if(S.web.length)h+='<div style="margin-top:12px">'+webHtml()+'</div>';
   if(!S.sales.length){
     return h+'<div class="empty" style="margin-top:14px"><h3>Aún no hay ventas</h3><p>Registra la primera venta y aquí verás lo vendido, lo cobrado y lo que falta por entregar.</p><button class="btn gold" data-act="newsale" type="button">Registrar primera venta</button></div>';
   }
@@ -812,7 +813,7 @@ async function enter(m){
   document.addEventListener('visibilitychange',function(){if(!document.hidden&&!S.sheet)reload().then(autoRate);});
 }
 async function startApp(){
-  var url=import.meta.env.VITE_SUPABASE_URL,key=import.meta.env.VITE_SUPABASE_ANON_KEY;
+  var url=import.meta.env.VITE_SUPABASE_URL||'https://gwbmniwceyqxmnbctenz.supabase.co',key=import.meta.env.VITE_SUPABASE_ANON_KEY||'sb_publishable_6hruA5M5rw0UNlTPltvFfQ_dZMrio1I';
   if(!url||!key){authShow('Configuración pendiente','Falta configurar la conexión con Supabase en Vercel.');return;}
   SB=createClient(url,key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
   try{
