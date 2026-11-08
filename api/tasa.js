@@ -1,5 +1,5 @@
 // Devuelve la tasa oficial del BCV (Bs por USD). Se guarda en caché 10 minutos.
-const https = require('https');
+import https from 'node:https';
 
 function get(url, agent) {
   return new Promise((resolve, reject) => {
@@ -32,7 +32,7 @@ async function fromDolarApi() {
   return { rate, date: (j.fechaActualizacion || '').slice(0, 10) || null, source: 've.dolarapi.com' };
 }
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   let out = null;
   for (const src of [fromBcv, fromDolarApi]) {
     try {
@@ -46,4 +46,4 @@ module.exports = async (req, res) => {
   }
   res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=3600');
   res.status(200).json(out);
-};
+}
