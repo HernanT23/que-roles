@@ -101,8 +101,8 @@ section.block h2{font-size:clamp(30px,5vw,44px);color:var(--brand)}
 .order>div:first-child{position:sticky;top:16px;align-self:start}
 .field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
 .field label,.field .lbl{font-size:15px;font-weight:700;color:var(--fg)}
-.field input[type=text],.field textarea{font:inherit;color:var(--fg);background:var(--bg);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;width:100%;min-width:0}
 .sel{font:inherit;color:var(--fg);background:var(--bg);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;width:100%;min-width:0}
+.field input[type=text],.field textarea{font:inherit;color:var(--fg);background:var(--bg);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;width:100%;min-width:0}
 .field textarea{min-height:76px;resize:vertical}
 .qty{display:flex;align-items:center;gap:14px}
 .qty button{width:48px;height:48px;border-radius:50%;border:2px solid var(--fg);background:transparent;color:var(--fg);font:700 24px var(--body);cursor:pointer;line-height:1}
@@ -253,11 +253,11 @@ footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
       </div>
       <div class="field">
         <label for="name">Tu nombre</label>
-        <input type="text" id="name" autocomplete="name" placeholder="Ej: María">
-      </div>
-      <div class="field">
-        <label for="fecha">Fecha de entrega</label>
-        <select id="fecha" class="sel"></select>
+        <input type="text" id="name" autocomplete="name" placeholder="Ej: María" required>
+        <label for="phone">Tu teléfono</label>
+        <input type="text" id="phone" autocomplete="tel" placeholder="0412..." required>
+        <label for="requestedFor">Fecha de entrega</label>
+        <select id="requestedFor" class="sel" required></select>
         <p class="hint">Entregamos de jueves a domingo. Pide con al menos 1 semana de antelación.</p>
       </div>
       <div class="field">
@@ -276,7 +276,10 @@ footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
         <a class="maplink" id="mapsopen" href="https://www.google.com/maps" target="_blank" rel="noopener">Abrir Google Maps</a>
       </div>
       <div class="field">
-        <span class="lbl">Método de pago</span>
+        <span class="lbl">¿Cuándo deseas pagar?</span>
+        <div class="seg"><label><input type="radio" name="paytiming" value="advance" checked><span>Pago anticipado</span></label><label><input type="radio" name="paytiming" value="on_delivery"><span>Al retirar / recibir</span></label></div>
+        <span class="hint">El pago anticipado se verifica manualmente antes de marcarlo como recibido.</span>
+        <span class="lbl">Datos para Pago Móvil Provincial</span>
         <div class="paynote">
           <b>Pago móvil</b>
           <dl class="paydata">
@@ -307,10 +310,7 @@ footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
       </div>
       <div class="total"><span>Total a pagar</span><b id="total">$5.5</b></div>
       <p class="bsline">En bolívares: <b id="bs"></b></p>
-      <div class="send">
-        <a class="btn wa stack" id="wa1" target="_blank" rel="noopener" href="#"><span>Enviar pedido por WhatsApp</span><small>al 0412-1526493</small></a>
-        <a class="btn line stack" id="wa2" target="_blank" rel="noopener" href="#"><span>Enviar pedido por WhatsApp</span><small>al 0412-1547207</small></a>
-      </div>
+      <div class="send"><button class="btn wa stack" id="submitOrder" type="button"><span>Registrar pedido y enviar por WhatsApp</span><small>Pedido automático a Que Roles</small></button><p id="orderFeedback" class="hint" role="status" aria-live="polite"></p><a id="wa1" hidden href="#"></a><a id="wa2" hidden href="#"></a></div>
       <p class="after">Por WhatsApp te confirmamos el total (con el costo del envío si es a domicilio), esperamos tu comprobante del pago móvil.</p>
     </form>
   </section>
@@ -330,8 +330,10 @@ footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
   function fmtNum(n,d){var p=n.toFixed(d).split('.');p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,'.');return d?p[0]+','+p[1]:p[0];}
   function fmtBs(n){return 'Bs '+fmtNum(n,2);}
   var N1='584121526493', N2='584121547207';
+  var SUPABASE_URL='https://gwbmniwceyqxmnbctenz.supabase.co';
+  var SUPABASE_ANON_KEY='sb_publishable_6hruA5M5rw0UNlTPltvFfQ_dZMrio1I';
   var $=function(id){return document.getElementById(id)};
-  var q=$('q'), total=$('total'), name=$('name'), note=$('note'), roles=$('roles'),
+  var q=$('q'), total=$('total'), name=$('name'), phone=$('phone'), requestedFor=$('requestedFor'), note=$('note'), roles=$('roles'),
       wa1=$('wa1'), wa2=$('wa2'), chips=$('chips'), addr=$('addr'), maps=$('maps'), ref=$('ref');
 
   function money(n){var s=(Math.round(n*100)/100).toFixed(2);return '$'+s.replace(/\.?0+$/,'');}
@@ -365,7 +367,7 @@ footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
       plus[n].disabled=s>=need;
       rows[n].classList.toggle('on',cnt[n]>0);
     });
-    var ok=s===need&&!!$('fecha').value;
+    var ok=s===need&&!!requestedFor.value;
     $('topstat').textContent=ok?'Listo: '+need+(need===1?' cobertura':' coberturas')+'.':(s!==need?'Elige '+(need-s)+' más: son '+need+' en total, una por rol ('+pk(qty)+').':'Elige la fecha de entrega para poder enviar el pedido.');
     [wa1,wa2].forEach(function(a){a.classList.toggle('off',!ok);a.setAttribute('aria-disabled',String(!ok));a.tabIndex=ok?0:-1;});
   }
@@ -380,11 +382,13 @@ footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
   function msg(){
     var t='Hola, quiero pedir '+pk(qty)+' de 3 roles de canela ('+(qty*3)+' roles). Total: '+money(qty*PRICE)+'.';
     var mode=document.querySelector('input[name=mode]:checked').value;
-    var pay=document.querySelector('input[name=pay]:checked').value;
+    var pay=document.querySelector('input[name=paytiming]:checked').value==='advance'?'Pago móvil anticipado (por verificar)':'Pago al retirar o recibir';
     if(name.value.trim()) t+=' Mi nombre es '+name.value.trim()+'.';
+    if(phone.value.trim()) t+=' Teléfono: '+phone.value.trim()+'.';
+    if(requestedFor.value) t+=' Fecha de entrega: '+requestedFor.selectedOptions[0].text+'.';
     var tops=TOPS.filter(function(n){return cnt[n]>0;}).map(function(n){return cnt[n]+' '+n;}).join(', ');
     if(tops) t+=' Coberturas: '+tops+'.';
-    t+=' Entrega: '+mode+', el '+$('fecha').selectedOptions[0].text+'.';
+    t+=' Entrega: '+mode+'.';
     if(mode!=='Retiro' && addr.value.trim()) t+=' Dirección: '+addr.value.trim()+'.';
     if(mode!=='Retiro' && maps.value.trim()) t+=' Ubicación: '+maps.value.trim()+'.';
     t+=' Pago por: '+pay+', monto en Bs: '+fmtNum(qty*PRICE*RATE,2)+' (tasa BCV '+fmtNum(RATE,4)+' del '+RATE_DATE+').';
@@ -409,9 +413,39 @@ footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
   }
   $('minus').onclick=function(){if(qty>1){qty--;render();}};
   $('plus').onclick=function(){if(qty<MAX){qty++;render();}};
-  name.addEventListener('input',render);note.addEventListener('input',render);addr.addEventListener('input',render);maps.addEventListener('input',render);ref.addEventListener('input',render);
+  name.addEventListener('input',render);phone.addEventListener('input',render);requestedFor.addEventListener('change',render);note.addEventListener('input',render);addr.addEventListener('input',render);maps.addEventListener('input',render);ref.addEventListener('input',render);
   $('f').addEventListener('change',render);
   $('f').addEventListener('submit',function(e){e.preventDefault();});
+  $('submitOrder').addEventListener('click',async function(){
+    var button=this, feedback=$('orderFeedback');
+    var date=requestedFor.value;
+    if(name.value.trim().length<2||phone.value.replace(/\D/g,'').length<7){feedback.textContent='Escribe tu nombre y un teléfono válido.';return;}
+    if(!date){feedback.textContent='Elige la fecha de entrega.';return;}
+    if(document.querySelector('input[name=mode]:checked').value!=='Retiro'&&!addr.value.trim()){feedback.textContent='Indica la dirección de entrega.';return;}
+    if(sumC()!==qty*3){feedback.textContent='Completa las coberturas de todos los roles.';return;}
+    button.disabled=true;feedback.textContent='Registrando pedido…';
+    var payload={idempotency_key:crypto.randomUUID(),customer_name:name.value.trim(),customer_phone:phone.value.trim(),
+      quantity_packages:qty,toppings:TOPS.reduce(function(o,n){if(cnt[n])o[n]=cnt[n];return o;},{}),
+      fulfillment:document.querySelector('input[name=mode]:checked').value,delivery_address:addr.value.trim(),
+      maps_url:maps.value.trim(),requested_for:date,payment_timing:document.querySelector('input[name=paytiming]:checked').value,
+      payment_reference:ref.value.trim(),customer_note:note.value.trim()};
+    var target=payload.fulfillment==='Retiro'?N1:N2;
+    var waLink='<a href="https://wa.me/'+target+'?text='+msg()+'" target="_blank" rel="noopener"><b>Abrir WhatsApp</b></a>';
+    var saved=false,why='';
+    try{
+      var response=await fetch(SUPABASE_URL+'/rest/v1/rpc/submit_web_order',{method:'POST',
+        headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY},
+        body:JSON.stringify({p_order:payload})});
+      var result=await response.json().catch(function(){return {};});
+      if(!response.ok||!result.ok)throw new Error(result.message||result.error||'No se pudo registrar el pedido.');
+      saved=true;
+    }catch(err){why=(err&&err.name!=='TypeError'&&err.message)||'';}
+    /* El pedido nunca se pierde: aunque no se pueda guardar, siempre queda el envío por WhatsApp. */
+    feedback.innerHTML=(saved?'¡Pedido registrado! ':'No pudimos registrar el pedido automáticamente'+(why&&why.length<120?' ('+why.replace(/</g,'&lt;')+')':'')+', pero puedes enviarlo igual. ')+'Envíalo por WhatsApp para coordinar los detalles: '+waLink;
+    try{window.open('https://wa.me/'+target+'?text='+msg(),'_blank','noopener');}catch(e){}
+    button.disabled=false;
+  });
+
 
   $('wab').href='https://wa.me/'+N1+'?text='+encodeURIComponent('Hola, quiero cotizar un rol de cumpleaños. Es para el día: ');
   $('wam').href='https://wa.me/'+N1+'?text='+encodeURIComponent('Hola, quiero cotizar roles mini. Cantidad y fecha: ');
@@ -430,9 +464,9 @@ footer .brand{font-family:var(--display);font-size:20px;color:var(--gold)}
   var MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   function fmtDate(s){var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?(+m[3])+' '+MES[+m[2]-1]+' '+m[1]:'';}
   function buildDates(){
-    var sel=$('fecha'),o=document.createElement('option');o.value='';o.textContent='Elige una fecha';sel.appendChild(o);
+    var sel=requestedFor,o=document.createElement('option');o.value='';o.textContent='Elige una fecha';sel.appendChild(o);
     var DN=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'],ML=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-    var c=new Date(Date.now()-4*3600*1000); /* hora de Venezuela (UTC-4) */
+    var c=new Date(Date.now()-4*3600*1000);
     var base=Date.UTC(c.getUTCFullYear(),c.getUTCMonth(),c.getUTCDate());
     for(var i=7;i<=42;i++){
       var d=new Date(base+i*86400000),w=d.getUTCDay();

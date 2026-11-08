@@ -1,1 +1,16 @@
-{"name":"que-roles","private":true}
+{
+  "name": "que-roles",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.0"
+  },
+  "devDependencies": {
+    "vite": "^7.1.7"
+  }
+}
